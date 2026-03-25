@@ -2,19 +2,13 @@ import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  Ticket as TicketIcon, 
-  Calendar, 
-  Clock, 
-  ChevronRight, 
-  Search,
-  CheckCircle2,
-  XCircle,
-  Timer,
-  Navigation,
-  QrCode
+  Ticket as TicketIcon, Calendar, Clock, Search,
+  CheckCircle2, XCircle, Timer, Navigation, QrCode
 } from "lucide-react";
-import { userTickets, routes, formatPrice } from "@/data/mockData";
+import { useUserTickets } from "@/hooks/useTickets";
+import { useRoutes } from "@/hooks/useRoutes";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
 import { BottomNav } from "@/components/BottomNav";
@@ -23,11 +17,13 @@ export default function Tickets() {
   const navigate = useNavigate();
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const { data: tickets = [], isLoading } = useUserTickets();
+  const { data: routes = [] } = useRoutes();
 
   const filteredTickets = useMemo(() => {
-    return userTickets.filter(t => {
+    return tickets.filter(t => {
       const matchesStatus = filterStatus === "all" || t.status === filterStatus;
-      const route = routes.find(r => r.id === t.routeId);
+      const route = routes.find(r => r.id === t.route_id);
       const matchesSearch = 
         t.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
         route?.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -36,24 +32,25 @@ export default function Tickets() {
       
       return matchesStatus && matchesSearch;
     });
-  }, [filterStatus, searchTerm]);
+  }, [filterStatus, searchTerm, tickets, routes]);
+
+  const activeCount = tickets.filter(t => t.status === "active").length;
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
       <div className="bg-primary text-primary-foreground pt-12 pb-8 px-5">
         <div className="max-w-md mx-auto">
           <h1 className="text-xl font-bold mb-1">My Tickets</h1>
           <p className="text-primary-foreground/70 text-xs">Manage your bookings and track rides</p>
-          <Badge className="mt-3 bg-destructive/90 text-destructive-foreground text-[10px] animate-pulse">
-            <Navigation size={12} className="mr-1" /> 1 Active Ride
-          </Badge>
+          {activeCount > 0 && (
+            <Badge className="mt-3 bg-destructive/90 text-destructive-foreground text-[10px] animate-pulse">
+              <Navigation size={12} className="mr-1" /> {activeCount} Active Ride{activeCount > 1 ? "s" : ""}
+            </Badge>
+          )}
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-md mx-auto px-5 mt-4 space-y-4">
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
           <Input 
@@ -64,7 +61,6 @@ export default function Tickets() {
           />
         </div>
 
-        {/* Filter Pills */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           {["all", "active", "completed", "cancelled"].map((status) => (
             <button
@@ -82,11 +78,23 @@ export default function Tickets() {
           ))}
         </div>
 
-        {/* Tickets List */}
         <div className="space-y-3">
-          {filteredTickets.length > 0 ? (
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="border-0 shadow-sm rounded-xl">
+                <CardContent className="p-4 space-y-3">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-5 w-40" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <Skeleton className="h-8" />
+                    <Skeleton className="h-8" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))
+          ) : filteredTickets.length > 0 ? (
             filteredTickets.map((ticket) => {
-              const route = routes.find(r => r.id === ticket.routeId);
+              const route = routes.find(r => r.id === ticket.route_id);
               const isTracking = ticket.status === "active";
 
               return (
@@ -123,21 +131,21 @@ export default function Tickets() {
                         <p className="text-[10px] text-muted-foreground">Date</p>
                         <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                           <Calendar size={12} className="text-primary" />
-                          {ticket.departureDate}
+                          {ticket.departure_date}
                         </div>
                       </div>
                       <div className="space-y-0.5">
                         <p className="text-[10px] text-muted-foreground">Time</p>
                         <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                           <Clock size={12} className="text-primary" />
-                          {ticket.departureTime}
+                          {ticket.departure_time}
                         </div>
                       </div>
                       <div className="space-y-0.5">
                         <p className="text-[10px] text-muted-foreground">Seat</p>
                         <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
                           <TicketIcon size={12} className="text-primary" />
-                          #{ticket.seatNumber}
+                          #{ticket.seat_number}
                         </div>
                       </div>
                       <div className="space-y-0.5">
