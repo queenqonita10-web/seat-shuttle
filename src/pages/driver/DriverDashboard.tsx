@@ -4,21 +4,51 @@ import { trips, routes } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Bus, Clock, MapPin, Power, Play, Mic, Volume2 } from "lucide-react";
+import { 
+  Bus, Clock, MapPin, Power, Play, CheckCircle2, Fuel, Battery, ShieldCheck 
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VoiceCommandLayer } from "@/components/VoiceCommandLayer";
+import { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const DriverDashboard = () => {
   const navigate = useNavigate();
-  const { isOnline, setIsOnline, setActiveTrip, activeTrip, isDrivingMode, setIsDrivingMode, playFeedback } = useDriver();
+  const { isOnline, setIsOnline, setActiveTrip, isDrivingMode, setIsDrivingMode, playFeedback } = useDriver();
+  const [showChecklist, setShowChecklist] = useState(false);
+  const [checklist, setChecklist] = useState({
+    vehicle: false,
+    fuel: false,
+    battery: false,
+  });
 
   const assignedTrip = trips[0];
   const route = routes.find((r) => r.id === assignedTrip.routeId);
 
   const handleStartTrip = () => {
+    if (!checklist.vehicle || !checklist.fuel || !checklist.battery) {
+      setShowChecklist(true);
+      return;
+    }
     setActiveTrip(assignedTrip);
     navigate("/driver/trip");
   };
+
+  const handleConfirmChecklist = () => {
+    setShowChecklist(false);
+    setActiveTrip(assignedTrip);
+    navigate("/driver/trip");
+  };
+
+  const isChecklistComplete = checklist.vehicle && checklist.fuel && checklist.battery;
 
   const handleVoiceCommand = (command: string) => {
     if (command === "start trip") {
@@ -161,6 +191,93 @@ const DriverDashboard = () => {
       </button>
 
       <VoiceCommandLayer onCommand={handleVoiceCommand} />
+
+      {/* Pre-Trip Checklist Dialog */}
+      <Dialog open={showChecklist} onOpenChange={setShowChecklist}>
+        <DialogContent className={cn(
+          "sm:max-w-[425px] rounded-[2rem] border-0",
+          isDrivingMode ? "bg-zinc-900 text-white" : "bg-white"
+        )}>
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
+              <ShieldCheck className="text-primary" size={32} />
+              Pre-Trip Checklist
+            </DialogTitle>
+            <DialogDescription className={cn(
+              "font-bold uppercase tracking-widest text-xs",
+              isDrivingMode ? "text-white/50" : "text-muted-foreground"
+            )}>
+              Verify all safety protocols before starting
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-8 space-y-6">
+            <div 
+              className={cn(
+                "flex items-center justify-between p-6 rounded-2xl transition-all",
+                checklist.vehicle ? "bg-primary/10 border-primary/20 border-2" : (isDrivingMode ? "bg-white/5 border-2 border-transparent" : "bg-muted/50 border-2 border-transparent")
+              )}
+              onClick={() => setChecklist(prev => ({ ...prev, vehicle: !prev.vehicle }))}
+            >
+              <div className="flex items-center gap-4">
+                <Bus className={cn(checklist.vehicle ? "text-primary" : "opacity-40")} size={28} />
+                <span className="font-black uppercase tracking-tight text-lg">Vehicle Ready</span>
+              </div>
+              <Checkbox 
+                checked={checklist.vehicle} 
+                className="w-8 h-8 rounded-full border-4 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              />
+            </div>
+
+            <div 
+              className={cn(
+                "flex items-center justify-between p-6 rounded-2xl transition-all",
+                checklist.fuel ? "bg-primary/10 border-primary/20 border-2" : (isDrivingMode ? "bg-white/5 border-2 border-transparent" : "bg-muted/50 border-2 border-transparent")
+              )}
+              onClick={() => setChecklist(prev => ({ ...prev, fuel: !prev.fuel }))}
+            >
+              <div className="flex items-center gap-4">
+                <Fuel className={cn(checklist.fuel ? "text-primary" : "opacity-40")} size={28} />
+                <span className="font-black uppercase tracking-tight text-lg">Fuel Sufficient</span>
+              </div>
+              <Checkbox 
+                checked={checklist.fuel} 
+                className="w-8 h-8 rounded-full border-4 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              />
+            </div>
+
+            <div 
+              className={cn(
+                "flex items-center justify-between p-6 rounded-2xl transition-all",
+                checklist.battery ? "bg-primary/10 border-primary/20 border-2" : (isDrivingMode ? "bg-white/5 border-2 border-transparent" : "bg-muted/50 border-2 border-transparent")
+              )}
+              onClick={() => setChecklist(prev => ({ ...prev, battery: !prev.battery }))}
+            >
+              <div className="flex items-center gap-4">
+                <Battery className={cn(checklist.battery ? "text-primary" : "opacity-40")} size={28} />
+                <span className="font-black uppercase tracking-tight text-lg">Phone Charged</span>
+              </div>
+              <Checkbox 
+                checked={checklist.battery} 
+                className="w-8 h-8 rounded-full border-4 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              className={cn(
+                "w-full h-20 text-2xl font-black rounded-2xl transition-all",
+                isChecklistComplete ? "bg-primary text-white" : "bg-zinc-800 text-white/20"
+              )}
+              disabled={!isChecklistComplete}
+              onClick={handleConfirmChecklist}
+            >
+              ALL SYSTEMS READY
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
