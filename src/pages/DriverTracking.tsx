@@ -329,6 +329,8 @@ export default function DriverTracking() {
           Cancel Ride
         </button>
       </div>
+
+      <BottomNav />
     </div>
   );
 }
