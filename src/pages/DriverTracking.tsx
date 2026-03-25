@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "@/context/BookingContext";
 import { useRoutes } from "@/hooks/useRoutes";
-import { useTrips } from "@/hooks/useTrips";
 import { useVehicleTypes } from "@/hooks/useVehicles";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,7 +21,13 @@ export default function DriverTracking() {
   const { booking } = useBooking();
 
   const { data: routes = [] } = useRoutes();
-  const { data: allTrips = [] } = useTrips();
+  const { data: allTrips = [] } = useQuery({
+    queryKey: ["trips-all"],
+    queryFn: async () => {
+      const { data } = await supabase.from("trips").select("*");
+      return data || [];
+    },
+  });
   const { data: vehicleTypes = [] } = useVehicleTypes();
 
   const trip = booking ? allTrips.find((t) => t.id === booking.tripId) : null;
@@ -134,7 +141,7 @@ export default function DriverTracking() {
   const progressPercent = Math.min(100, (estimatedPosition / pickupOrder) * 100);
 
   // Relevant stops: from start to user's pickup
-  const relevantStops = pickupPoints.filter((p) => p.order <= pickupOrder).sort((a, b) => a.order - b.order);
+  const relevantStops = (route?.pickup_points || []).filter((p) => p.sort_order <= pickupOrder).sort((a, b) => a.sort_order - b.sort_order);
   // SVG path points for the simulated route
   const totalStops = relevantStops.length;
   const pathPoints = relevantStops.map((_, i) => {
