@@ -284,7 +284,7 @@ describe("Notification Integration", () => {
     });
 
     // With quiet hours disabled, notification should go through
-    await service.sendArrivalNotification("DRV-001", "Pickup", 10);
+      await service.sendArrivalNotification("DRV-001", 10, "Pickup");
 
     const count = service.getUnreadCount();
     expect(count).toBeGreaterThanOrEqual(0);
