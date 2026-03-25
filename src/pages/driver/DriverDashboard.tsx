@@ -169,14 +169,14 @@ const DriverDashboard = () => {
 
         {/* Glanceable Stats - High Contrast */}
         <div className="grid grid-cols-2 gap-4 pb-12">
-          <button className={cn(
+          <button onClick={() => navigate("/driver/history")} className={cn(
             "p-6 rounded-[2rem] text-left transition-all active:scale-95 min-h-[100px]",
             isDrivingMode ? "bg-zinc-900 border border-white/10" : "bg-muted/50"
           )}>
             <p className="text-xs font-black opacity-50 uppercase tracking-widest mb-2">Today's Progress</p>
             <p className="text-4xl font-black tracking-tighter">0<span className="text-xl opacity-30"> / 3</span></p>
           </button>
-          <button className={cn(
+          <button onClick={() => navigate("/driver/earnings")} className={cn(
             "p-6 rounded-[2rem] text-left transition-all active:scale-95 min-h-[100px]",
             isDrivingMode ? "bg-zinc-900 border border-white/10" : "bg-muted/50"
           )}>
