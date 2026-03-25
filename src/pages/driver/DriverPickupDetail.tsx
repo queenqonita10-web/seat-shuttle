@@ -45,9 +45,10 @@ const DriverPickupDetail = () => {
     return null;
   }
 
-  const route = routes.find((r) => r.id === activeTrip.routeId);
-  const currentStop = route?.pickupPoints[currentStopIndex];
-  const stopBookings = bookings.filter((b) => b.pickupPointId === currentStop?.id);
+  const { data: routesData = [] } = useRoutes();
+  const route = routesData.find((r) => r.id === activeTrip.route_id);
+  const currentStop = route?.pickup_points[currentStopIndex];
+  const stopBookings = bookings.filter((b) => b.pickup_point_id === currentStop?.id);
 
   // Simulate Random Passenger Requests
   useEffect(() => {
@@ -274,7 +275,7 @@ const DriverPickupDetail = () => {
                   <div className="flex justify-between items-start mb-6">
                     <div className="flex-grow">
                       <div className="flex items-center gap-3 mb-1">
-                        <h3 className="text-3xl font-black uppercase tracking-tight">{booking.passengerName}</h3>
+                        <h3 className="text-3xl font-black uppercase tracking-tight">{booking.passenger_name}</h3>
                         {isTimerRunning && (
                           <Badge className="bg-destructive text-white animate-pulse px-3 py-1 font-black rounded-lg">
                             <Clock size={14} className="mr-1" /> {formatTime(timerValue)}
@@ -282,10 +283,10 @@ const DriverPickupDetail = () => {
                         )}
                       </div>
                       <div className="flex items-center gap-4">
-                        <p className="text-xl font-bold opacity-60 tracking-tight">{booking.passengerPhone}</p>
+                        <p className="text-xl font-bold opacity-60 tracking-tight">{booking.passenger_phone}</p>
                         <div className="flex gap-2">
                           <button 
-                            onClick={() => handleCall(booking.passengerPhone)}
+                            onClick={() => handleCall(booking.passenger_phone)}
                             className="bg-primary/20 text-primary p-2 rounded-xl active:scale-90 transition-all"
                           >
                             <Phone size={20} strokeWidth={3} />
@@ -319,7 +320,7 @@ const DriverPickupDetail = () => {
                       booking.status === "no_show" ? "bg-red-600 text-white" : 
                       isDrivingMode ? "bg-white text-black" : "bg-primary text-white"
                     )}>
-                      #{booking.seatNumber}
+                      #{booking.seat_number}
                     </Badge>
                   </div>
 
