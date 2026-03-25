@@ -12,15 +12,15 @@ import { BottomNav } from "@/components/BottomNav";
 export default function DriverTracking() {
   const navigate = useNavigate();
   const { booking } = useBooking();
-  const [driverPosition, setDriverPosition] = useState(1);
-  const [eta, setEta] = useState(15);
-  const [seconds, setSeconds] = useState(0);
 
   const pickup = booking ? pickupPoints.find((p) => p.id === booking.pickupPointId) : null;
   const pickupOrder = pickup?.order ?? 5;
-
   const trip = booking ? trips.find((t) => t.id === booking.tripId) : null;
   const vehicle = trip ? getVehicleType(trip.vehicleTypeId) : null;
+
+  const [driverPosition, setDriverPosition] = useState(1);
+  const [eta, setEta] = useState(15);
+  const [seconds, setSeconds] = useState(0);
 
   // Relevant stops: from start to user's pickup
   const relevantStops = pickupPoints.filter((p) => p.order <= pickupOrder).sort((a, b) => a.order - b.order);
@@ -64,8 +64,37 @@ export default function DriverTracking() {
       ? `M ${pathPoints.map((p) => `${p.x},${p.y}`).join(" L ")}`
       : "";
 
+  if (!booking) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <div className="bg-primary px-5 pb-4 pt-12 text-primary-foreground">
+          <div className="mx-auto max-w-md">
+            <h1 className="text-lg font-bold">PYU-GO Tracking</h1>
+          </div>
+        </div>
+        <div className="mx-auto max-w-md px-5 mt-8">
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-8 text-center space-y-4">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                <Bus className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-base font-semibold">Belum ada perjalanan aktif</p>
+                <p className="text-sm text-muted-foreground">Pesan tiket dulu untuk mulai tracking driver kamu</p>
+              </div>
+              <Button onClick={() => navigate("/")} className="h-11 px-6">
+                Cari Perjalanan
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-background pb-6">
+    <div className="min-h-screen bg-background pb-20">
       {/* Header */}
       <div className="bg-primary px-5 pb-4 pt-12 text-primary-foreground">
         <div className="mx-auto max-w-md">

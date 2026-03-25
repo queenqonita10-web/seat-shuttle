@@ -16,6 +16,7 @@ export default function ETicket() {
     return null;
   }
 
+
   const trip = trips.find((t) => t.id === booking.tripId);
   const pickup = pickupPoints.find((p) => p.id === booking.pickupPointId);
   const route = trip ? routes.find((r) => r.id === trip.routeId) : null;
@@ -24,7 +25,7 @@ export default function ETicket() {
   const fare = routePickup?.fare ?? 0;
 
   return (
-    <div className="min-h-screen bg-background pb-6">
+    <div className="min-h-screen bg-background pb-20">
       <div className="bg-primary px-5 pb-8 pt-12 text-primary-foreground text-center">
         <div className="mx-auto max-w-md">
           <CheckCircle size={48} className="mx-auto mb-2" />
@@ -110,7 +111,7 @@ export default function ETicket() {
         </Card>
 
         <div className="space-y-2">
-          <Button onClick={() => navigate("/tracking")} className="w-full h-11 font-semibold">
+          <Button onClick={() => navigate("/track")} className="w-full h-11 font-semibold">
             Track Driver
           </Button>
           <Button onClick={() => navigate("/")} variant="outline" className="w-full h-11">
@@ -118,6 +119,8 @@ export default function ETicket() {
           </Button>
         </div>
       </div>
+
+      <BottomNav />
     </div>
   );
 }
