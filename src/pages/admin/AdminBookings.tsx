@@ -62,6 +62,7 @@ export default function AdminBookings() {
               <TableRow>
                 <TableHead>ID</TableHead>
                 <TableHead>Penumpang</TableHead>
+                <TableHead className="hidden md:table-cell">Telepon</TableHead>
                 <TableHead className="hidden md:table-cell">Rute</TableHead>
                 <TableHead className="hidden md:table-cell">Seat</TableHead>
                 <TableHead className="hidden lg:table-cell">Pickup</TableHead>
@@ -76,6 +77,7 @@ export default function AdminBookings() {
                   <TableRow key={b.id} className="cursor-pointer" onClick={() => setSelected(b)}>
                     <TableCell className="font-mono text-xs">{b.id}</TableCell>
                     <TableCell>{b.passengerName}</TableCell>
+                    <TableCell className="hidden md:table-cell text-xs">{b.passengerPhone}</TableCell>
                     <TableCell className="hidden md:table-cell">{route?.name ?? "-"}</TableCell>
                     <TableCell className="hidden md:table-cell">{b.seatNumber}</TableCell>
                     <TableCell className="hidden lg:table-cell text-xs">{pickup?.label ?? "-"}</TableCell>
@@ -105,6 +107,7 @@ export default function AdminBookings() {
               </DialogHeader>
               <div className="grid gap-3 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Penumpang</span><span className="font-medium">{selected.passengerName}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Telepon</span><span className="font-medium">{selected.passengerPhone}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Rute</span><span>{route?.name} → {route?.destination}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Keberangkatan</span><span>{trip?.departureTime}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Seat</span><span>{selected.seatNumber}</span></div>

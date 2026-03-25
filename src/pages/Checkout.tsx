@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "@/context/BookingContext";
-import { routes, formatPrice, getPickupTime, getFareForPickup } from "@/data/mockData";
+import { routes, formatPrice, getPickupTime } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, CreditCard, Wallet, QrCode, MapPin, Armchair, Clock, DollarSign, AlertCircle } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ArrowLeft, CreditCard, Wallet, QrCode, MapPin, Armchair, Clock, DollarSign, AlertCircle, User, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const paymentMethods = [
@@ -15,7 +17,7 @@ const paymentMethods = [
 
 export default function Checkout() {
   const navigate = useNavigate();
-  const { selectedTrip, selectedSeat, pickupPoint, setBooking } = useBooking();
+  const { selectedTrip, selectedSeat, pickupPoint, passengerName, passengerPhone, setPassengerName, setPassengerPhone, setBooking } = useBooking();
   const [selectedPayment, setSelectedPayment] = useState("");
   const [processing, setProcessing] = useState(false);
 
@@ -31,8 +33,12 @@ export default function Checkout() {
     ? getPickupTime(selectedTrip.departureTime, routePickup)
     : selectedTrip.departureTime;
 
+  const isNameValid = passengerName.trim().length >= 3;
+  const isPhoneValid = /^08\d{8,12}$/.test(passengerPhone.trim());
+  const canPay = isNameValid && isPhoneValid && !!selectedPayment;
+
   const handlePay = () => {
-    if (!selectedPayment) return;
+    if (!canPay) return;
     setProcessing(true);
     setTimeout(() => {
       setBooking({
@@ -40,7 +46,8 @@ export default function Checkout() {
         tripId: selectedTrip.id,
         seatNumber: selectedSeat,
         pickupPointId: pickupPoint.id,
-        passengerName: "Passenger",
+        passengerName: passengerName.trim(),
+        passengerPhone: passengerPhone.trim(),
         paymentMethod: selectedPayment,
         paymentStatus: "paid",
         createdAt: new Date().toISOString(),
@@ -68,6 +75,49 @@ export default function Checkout() {
             Be at <span className="font-bold">{pickupPoint.label}</span> by <span className="font-bold text-shuttle-warning">{pickupTime}</span>
           </p>
         </div>
+
+        {/* Passenger Biodata */}
+        <Card className="border-0 shadow-sm">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">Data Penumpang</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="name" className="flex items-center gap-1.5 text-xs">
+                <User size={12} className="text-primary" /> Nama Lengkap
+              </Label>
+              <Input
+                id="name"
+                placeholder="Masukkan nama lengkap"
+                maxLength={100}
+                value={passengerName}
+                onChange={(e) => setPassengerName(e.target.value)}
+              />
+              {passengerName.length > 0 && !isNameValid && (
+                <p className="text-xs text-destructive">Minimal 3 karakter</p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="phone" className="flex items-center gap-1.5 text-xs">
+                <Phone size={12} className="text-primary" /> No. Telepon
+              </Label>
+              <Input
+                id="phone"
+                placeholder="08xxxxxxxxxx"
+                maxLength={15}
+                value={passengerPhone}
+                onChange={(e) => {
+                  const val = e.target.value.replace(/[^0-9]/g, "");
+                  setPassengerPhone(val);
+                }}
+                inputMode="tel"
+              />
+              {passengerPhone.length > 0 && !isPhoneValid && (
+                <p className="text-xs text-destructive">Format: 08xxxxxxxxxx (10-14 digit)</p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Summary */}
         <Card className="border-0 shadow-sm">
@@ -135,7 +185,7 @@ export default function Checkout() {
           </div>
           <Button
             onClick={handlePay}
-            disabled={!selectedPayment || processing}
+            disabled={!canPay || processing}
             className="px-8 h-11 font-semibold bg-secondary hover:bg-secondary/90 text-secondary-foreground"
           >
             {processing ? "Processing..." : "Pay Now"}
