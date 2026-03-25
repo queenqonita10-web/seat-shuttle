@@ -14,16 +14,603 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          details: string | null
+          id: string
+          module: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          module: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          details?: string | null
+          id?: string
+          module?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      bookings: {
+        Row: {
+          created_at: string
+          fare: number
+          id: string
+          passenger_name: string
+          passenger_phone: string
+          payment_method: string
+          payment_status: string
+          pickup_point_id: string
+          seat_number: string
+          status: string
+          trip_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          fare?: number
+          id: string
+          passenger_name: string
+          passenger_phone?: string
+          payment_method?: string
+          payment_status?: string
+          pickup_point_id: string
+          seat_number: string
+          status?: string
+          trip_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          fare?: number
+          id?: string
+          passenger_name?: string
+          passenger_phone?: string
+          payment_method?: string
+          payment_status?: string
+          pickup_point_id?: string
+          seat_number?: string
+          status?: string
+          trip_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      driver_locations: {
+        Row: {
+          driver_id: string
+          heading: number | null
+          id: string
+          lat: number
+          lng: number
+          speed: number | null
+          updated_at: string
+        }
+        Insert: {
+          driver_id: string
+          heading?: number | null
+          id?: string
+          lat: number
+          lng: number
+          speed?: number | null
+          updated_at?: string
+        }
+        Update: {
+          driver_id?: string
+          heading?: number | null
+          id?: string
+          lat?: number
+          lng?: number
+          speed?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_locations_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: true
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      drivers: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          name: string
+          phone: string
+          status: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id: string
+          name: string
+          phone?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          phone?: string
+          status?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      pickup_points: {
+        Row: {
+          fare: number
+          id: string
+          label: string
+          route_id: string
+          sort_order: number
+          time_offset: number
+        }
+        Insert: {
+          fare?: number
+          id: string
+          label: string
+          route_id: string
+          sort_order?: number
+          time_offset?: number
+        }
+        Update: {
+          fare?: number
+          id?: string
+          label?: string
+          route_id?: string
+          sort_order?: number
+          time_offset?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pickup_points_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          address: string | null
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          id: string
+          loyalty_points: number
+          name: string
+          phone: string | null
+          total_trips: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          loyalty_points?: number
+          name?: string
+          phone?: string | null
+          total_trips?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          loyalty_points?: number
+          name?: string
+          phone?: string | null
+          total_trips?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      routes: {
+        Row: {
+          created_at: string
+          destination: string
+          distance: number
+          estimated_time: string
+          id: string
+          is_deleted: boolean
+          name: string
+          origin: string
+          route_code: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          destination: string
+          distance?: number
+          estimated_time?: string
+          id: string
+          is_deleted?: boolean
+          name: string
+          origin: string
+          route_code: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          destination?: string
+          distance?: number
+          estimated_time?: string
+          id?: string
+          is_deleted?: boolean
+          name?: string
+          origin?: string
+          route_code?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      seat_layout_templates: {
+        Row: {
+          cols: number
+          created_at: string
+          id: string
+          layout: Json
+          name: string
+          rows: number
+        }
+        Insert: {
+          cols: number
+          created_at?: string
+          id: string
+          layout?: Json
+          name: string
+          rows: number
+        }
+        Update: {
+          cols?: number
+          created_at?: string
+          id?: string
+          layout?: Json
+          name?: string
+          rows?: number
+        }
+        Relationships: []
+      }
+      seats: {
+        Row: {
+          col_num: number
+          id: string
+          row_num: number
+          seat_number: string
+          status: string
+          trip_id: string
+        }
+        Insert: {
+          col_num: number
+          id: string
+          row_num: number
+          seat_number: string
+          status?: string
+          trip_id: string
+        }
+        Update: {
+          col_num?: number
+          id?: string
+          row_num?: number
+          seat_number?: string
+          status?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "seats_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tickets: {
+        Row: {
+          booking_id: string
+          created_at: string
+          departure_date: string
+          departure_time: string
+          id: string
+          pickup_point_id: string
+          route_id: string
+          seat_number: string
+          status: string
+          tracking_status: string
+          trip_id: string
+          updated_at: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          departure_date: string
+          departure_time: string
+          id: string
+          pickup_point_id: string
+          route_id: string
+          seat_number: string
+          status?: string
+          tracking_status?: string
+          trip_id: string
+          updated_at?: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          departure_date?: string
+          departure_time?: string
+          id?: string
+          pickup_point_id?: string
+          route_id?: string
+          seat_number?: string
+          status?: string
+          tracking_status?: string
+          trip_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tickets_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trips: {
+        Row: {
+          created_at: string
+          departure_date: string
+          departure_time: string
+          driver_id: string | null
+          id: string
+          route_id: string
+          status: string
+          updated_at: string
+          vehicle_id: string | null
+          vehicle_type_id: string
+        }
+        Insert: {
+          created_at?: string
+          departure_date?: string
+          departure_time: string
+          driver_id?: string | null
+          id: string
+          route_id: string
+          status?: string
+          updated_at?: string
+          vehicle_id?: string | null
+          vehicle_type_id: string
+        }
+        Update: {
+          created_at?: string
+          departure_date?: string
+          departure_time?: string
+          driver_id?: string | null
+          id?: string
+          route_id?: string
+          status?: string
+          updated_at?: string
+          vehicle_id?: string | null
+          vehicle_type_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trips_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trips_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trips_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trips_vehicle_type_id_fkey"
+            columns: ["vehicle_type_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      vehicle_types: {
+        Row: {
+          capacity: number
+          created_at: string
+          id: string
+          layout: Json
+          name: string
+        }
+        Insert: {
+          capacity: number
+          created_at?: string
+          id: string
+          layout?: Json
+          name: string
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          id?: string
+          layout?: Json
+          name?: string
+        }
+        Relationships: []
+      }
+      vehicles: {
+        Row: {
+          assigned_route_id: string | null
+          brand: string
+          color: string
+          created_at: string
+          id: string
+          is_deleted: boolean
+          layout_template_id: string | null
+          license_plate: string
+          model: string
+          status: string
+          updated_at: string
+          vehicle_type_id: string
+          year: number
+        }
+        Insert: {
+          assigned_route_id?: string | null
+          brand: string
+          color?: string
+          created_at?: string
+          id: string
+          is_deleted?: boolean
+          layout_template_id?: string | null
+          license_plate: string
+          model: string
+          status?: string
+          updated_at?: string
+          vehicle_type_id: string
+          year: number
+        }
+        Update: {
+          assigned_route_id?: string | null
+          brand?: string
+          color?: string
+          created_at?: string
+          id?: string
+          is_deleted?: boolean
+          layout_template_id?: string | null
+          license_plate?: string
+          model?: string
+          status?: string
+          updated_at?: string
+          vehicle_type_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vehicles_assigned_route_id_fkey"
+            columns: ["assigned_route_id"]
+            isOneToOne: false
+            referencedRelation: "routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_layout_template_id_fkey"
+            columns: ["layout_template_id"]
+            isOneToOne: false
+            referencedRelation: "seat_layout_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vehicles_vehicle_type_id_fkey"
+            columns: ["vehicle_type_id"]
+            isOneToOne: false
+            referencedRelation: "vehicle_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "driver"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +737,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "driver"],
+    },
   },
 } as const
