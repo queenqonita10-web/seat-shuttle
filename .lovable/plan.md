@@ -1,37 +1,46 @@
 
 
-# Fix Build Errors & Ensure /track Works
+# Optimasi Tampilan Mobile untuk Semua Halaman User
 
-The `/track` driver tracking page is already fully implemented with the SVG map, timeline, ETA countdown, driver info, and action buttons. However, there are **13 build errors** across multiple files that prevent the app from running. These need to be fixed first.
+## Masalah
+Beberapa halaman user (Tickets, Profile, TicketDetail) menggunakan layout desktop-oriented dengan `max-w-4xl`, grid multi-kolom, padding besar, dan rounded corners berlebihan. Halaman lain (Index, SearchResults, Checkout, SeatSelection, ETicket) sudah mobile-first dengan `max-w-md`.
 
-## Build Error Fixes
+## Perubahan
 
-### 1. `src/data/mockData.ts` — Add missing `capacity` to vehicleTypes (lines 301, 310, 320)
-Three vehicle type entries are missing the required `capacity` field. Add `capacity` based on seat count in each layout.
+### 1. `Tickets.tsx` — Redesign mobile-first
+- Ganti `max-w-4xl` → `max-w-md`, kurangi header padding (`pb-32` → `pb-8`)
+- Ticket cards: kurangi `rounded-[2.5rem]` → `rounded-xl`, `p-8` → `p-4`
+- Info grid: `grid-cols-2` saja (hapus `md:grid-cols-4`)
+- Hapus right-side chevron panel (desktop-only element)
+- Filter pills: ukuran lebih kecil, mobile-friendly
+- Tambahkan `BottomNav`
 
-### 2. `src/pages/Checkout.tsx` — Add missing `status` field (line 44)
-The booking object created in `handlePay` is missing `status: "pending"`. Add it.
+### 2. `Profile.tsx` — Redesign mobile-first
+- Ganti `max-w-4xl` → `max-w-md`
+- Hapus `md:grid-cols-3` sidebar layout → single column stack
+- Pindahkan settings nav ke horizontal pills atau accordion di bawah profile info
+- Kurangi avatar size `h-32 w-32` → `h-20 w-20`
+- Form inputs: single column, kurangi padding
+- Tambahkan `BottomNav`
 
-### 3. `src/pages/admin/AdminAnalytics.tsx` — Missing imports (lines 55, 58, 234, 235, 280)
-Add `useState`, `useMemo` from React, `Search` from lucide-react, `Input` from UI components, and `cn` from utils.
+### 3. `TicketDetail.tsx` — Pastikan mobile-friendly
+- Ganti `max-w-4xl` → `max-w-md` jika ada
+- Pastikan single column layout
+- Tambahkan `BottomNav` jika belum ada
 
-### 4. `src/pages/admin/AdminTrips.tsx` — `isBooked` doesn't exist on `Seat` (line 107)
-The `Seat` interface uses `status: "available" | "booked"`, not `isBooked`. Fix to `s.status === "booked"`.
+### 4. `DriverTracking.tsx` — Tambah BottomNav
+- Pastikan ada `BottomNav` dan layout konsisten `max-w-md`
 
-### 5. `src/pages/admin/AdminTrips.tsx` — `name` doesn't exist on `Vehicle` (line 143)
-`Vehicle` interface has `brand`/`model`, not `name`. The code should look up `VehicleType` instead, or use `vehicle?.brand`.
+## Prinsip Desain
+- Semua halaman user: `max-w-md mx-auto`, padding `px-4` atau `px-5`
+- `BottomNav` di semua halaman user (dengan `pb-20` untuk spacing)
+- Card corners: `rounded-xl` atau `rounded-lg` (bukan `rounded-[2.5rem]`)
+- Font sizes dan padding sesuai layar 375px-414px
+- Single column layout, tidak ada grid multi-kolom
 
-### 6. `src/pages/admin/AdminVehicles.tsx` — `Clock` not imported (line 531)
-Add `Clock` to the lucide-react imports.
-
-### 7. `src/pages/driver/DriverPickupDetail.tsx` — `AlertTriangle` not imported (line 375)
-Add `AlertTriangle` to the lucide-react imports.
-
-## Files Modified
-- `src/data/mockData.ts` — add `capacity` to 3 vehicle entries
-- `src/pages/Checkout.tsx` — add `status` field
-- `src/pages/admin/AdminAnalytics.tsx` — add missing imports
-- `src/pages/admin/AdminTrips.tsx` — fix `isBooked` and `name` references
-- `src/pages/admin/AdminVehicles.tsx` — add `Clock` import
-- `src/pages/driver/DriverPickupDetail.tsx` — add `AlertTriangle` import
+## File yang Diubah
+- `src/pages/Tickets.tsx`
+- `src/pages/Profile.tsx`
+- `src/pages/TicketDetail.tsx`
+- `src/pages/DriverTracking.tsx`
 
