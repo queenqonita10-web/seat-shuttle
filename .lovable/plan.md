@@ -1,75 +1,63 @@
-# Shuttle Booking App — Implementation Plan
 
-## Overview
 
-A mobile-first shuttle booking app with a Traveloka-inspired clean UI, featuring multi-pickup point selection (J1–J17), interactive seat selection, and driver tracking. Blue primary / green secondary color scheme.
+# Improve UX: Seat Selection & Pickup Clarity
 
-## Screens & Flow
+Based on the uploaded reference images, the app needs two major updates:
 
-### 1. Home Screen
+## 1. Accurate Seat Layouts by Vehicle Type
 
-- Hero section with shuttle illustration/icon
-- Pickup point dropdown (J1–J17 with labels like "J1 - Terminal Utama")
-- Destination selector
-- Date picker
-- "Search Tickets" CTA button
-- Bottom navigation bar (Home, My Tickets, Track, Profile)
+The reference shows three distinct vehicle layouts that differ from the current generic 4x10 grid:
 
-### 2. Search Results
+- **Mini Bus/SUV (without roof rack)**: 3 passenger seats — Row 1: seat 1 + DRIVER, Row 2: seats 2-3, Row 3: Baggage
+- **Mini Bus/SUV (with roof rack)**: 5 passenger seats — Row 1: seat 1 + DRIVER, Row 2: seats 2-3, Row 3: seats 4-5, then BAGGAGE ROOF
+- **HI ACE (without roof rack)**: 10 passenger seats — Row 1: seat 1 + DRIVER, Row 2: seats 2-3-4, Row 3: seats 5-6-7, Row 4: seats 8-9-10, then BAGGAGE
 
-- Filter/sort bar (time, price)
-- Trip cards showing: departure time, estimated pickup time at selected point, price, remaining seats with urgency badge ("Only 2 left!")
-- Skeleton loading states
+### Changes to `mockData.ts`
+- Add a `VehicleType` with id, name, and seat layout definition (rows/cols/skip positions)
+- Add `vehicleType` field to `Trip` interface
+- Replace `generateSeats()` with layout-aware seat generators for each vehicle type
+- Update trips to use specific vehicle types
 
-### 3. Seat Selection (Core Feature)
+### Changes to `SeatGrid.tsx`
+- Render seat grid dynamically based on vehicle layout (variable columns per row)
+- Add "DRIVER" label in the correct position (top-right)
+- Add "BAGGAGE" area indicator at the bottom
+- Show vehicle type name at top of grid
+- Increase tap target size to `h-10 w-10`
 
-- Interactive bus seat grid layout (4 columns: 2-aisle-2)
-- Color-coded seats: available (white/light), selected (blue), booked (gray)
-- Legend bar
-- Tap animation on selection
-- Bottom summary bar with seat number + price + "Continue" CTA
+## 2. Real Route Data with Per-Pickup Fares
 
-### 4. Pickup Route Visualization
+The reference shows each pickup point has its own fare (not a flat trip price). For example Rayon A: J1=0, J2=700, J3=950, etc., with a total fare at destination.
 
-- Horizontal/vertical stepper showing J1 → J2 → ... → Destination
-- Selected pickup point highlighted in blue
-- Estimated pickup time displayed prominently
-- Simple timeline/route view
+### Changes to `mockData.ts`
+- Add `fare` field to `PickupPoint` interface (fare in Rupiah from that point)
+- Update pickup point data per rayon with real times and fares from the reference
+- Each route gets its own pickup points array with correct `timeOffset` and `fare` values
+- Update `Trip.price` to be dynamic based on selected pickup point, or remove flat price
+- Add helper `getFareForPickup(route, pickupPointId)` function
 
-### 5. Checkout
+### Changes to `SearchResults.tsx`
+- Show fare based on selected pickup point instead of flat trip price
+- Make pickup time more prominent with a colored badge
 
-- Booking summary card (pickup, seat, time, price)
-- Payment method selector (e-wallet, bank transfer, QR)
-- "Pay Now" CTA
+### Changes to `SeatSelection.tsx`
+- Add pickup info banner below header showing pickup point + estimated time
+- Show seat position label (e.g., "Window" / "Aisle") in bottom bar
 
-### 6. E-Ticket
+### Changes to `PickupRoute.tsx`
+- Show fare at each pickup point in the timeline
+- Add summary card: "Board at [point] · Arrive by [time]"
 
-- QR code display
-- Trip details card (route, seat, pickup point, time)
-- "Paid" status badge
-- Share/download options
+### Changes to `Checkout.tsx`
+- Add boarding reminder banner: "Be at [pickup point] by [time]"
+- Show fare from selected pickup point (not flat price)
 
-### 7. Driver Tracking
+## Files Modified
+- `src/data/mockData.ts` — vehicle types, per-pickup fares, real route data
+- `src/components/SeatGrid.tsx` — dynamic layout, driver/baggage labels, larger buttons
+- `src/pages/SeatSelection.tsx` — pickup banner, seat position info
+- `src/pages/SearchResults.tsx` — pickup-based fare, prominent pickup time
+- `src/pages/PickupRoute.tsx` — fare per stop, summary card
+- `src/pages/Checkout.tsx` — boarding reminder, correct fare
+- `src/context/BookingContext.tsx` — no changes needed
 
-- Simulated map view with driver marker
-- ETA display
-- Status text ("Driver is approaching J5")
-- "Contact Driver" button
-
-## Technical Approach
-
-- All screens as React pages with React Router
-- Mock data for routes, trips, seats, bookings
-- Shared state via React Context for booking flow
-- Tailwind for mobile-first responsive design
-- Lucide icons throughout
-- Framer Motion-style animations via Tailwind for micro-interactions
-- Custom color scheme (blue primary, green secondary)
-
-## Data Models (Mock)
-
-- **Routes**: id, name (Rayon A–D), pickup points array
-- **Pickup Points**: id (J1–J17), label, order, time offset
-- **Trips**: id, route, departure time, price, seats
-- **Seats**: id, number, status (available/booked/selected)
-- **Bookings**: id, trip, seat, pickup point, payment status
