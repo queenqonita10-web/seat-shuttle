@@ -61,7 +61,6 @@ const App = () => (
               <Route path="/tickets" element={<Tickets />} />
               <Route path="/ticket/:id" element={<TicketDetail />} />
               <Route path="/eticket" element={<ETicket />} />
-              <Route path="/tracking" element={<DriverTracking />} />
               <Route path="/track" element={<DriverTracking />} />
 
               {/* Admin Routes */}
