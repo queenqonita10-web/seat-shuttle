@@ -1,36 +1,21 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { 
-  User, 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Camera, 
-  LogOut, 
-  Shield, 
-  Bell, 
-  CreditCard,
-  ChevronRight,
-  Save,
-  Award,
-  Users
+  User, Mail, Phone, MapPin, Camera, LogOut, Shield, Bell, CreditCard, Save, Award, Users
 } from "lucide-react";
 import { currentUser } from "@/data/mockData";
 import { toast } from "sonner";
+import { BottomNav } from "@/components/BottomNav";
 
 export default function Profile() {
   const [profile, setProfile] = useState(currentUser);
   const [isEditing, setIsEditing] = useState(false);
+  const [activeTab, setActiveTab] = useState("personal");
 
   const handleSave = () => {
     setIsEditing(false);
@@ -38,158 +23,128 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-zinc-50 pb-20">
-      {/* Header Profile */}
-      <div className="bg-zinc-900 text-white pt-16 pb-32 px-6">
-        <div className="max-w-4xl mx-auto flex flex-col md:flex-row items-center gap-8">
-          <div className="relative group">
-            <div className="h-32 w-32 rounded-full border-4 border-primary overflow-hidden shadow-2xl bg-white">
+    <div className="min-h-screen bg-background pb-20">
+      {/* Header */}
+      <div className="bg-primary text-primary-foreground pt-12 pb-8 px-5">
+        <div className="max-w-md mx-auto flex items-center gap-4">
+          <div className="relative">
+            <div className="h-16 w-16 rounded-full border-2 border-primary-foreground/30 overflow-hidden bg-muted">
               <img src={profile.avatar} alt={profile.name} className="h-full w-full object-cover" />
             </div>
-            <button className="absolute bottom-0 right-0 h-10 w-10 bg-primary text-white rounded-full flex items-center justify-center border-4 border-zinc-900 hover:scale-110 transition-transform">
-              <Camera size={18} />
+            <button className="absolute -bottom-1 -right-1 h-7 w-7 bg-secondary text-secondary-foreground rounded-full flex items-center justify-center border-2 border-primary">
+              <Camera size={12} />
             </button>
           </div>
-          <div className="text-center md:text-left">
-            <h1 className="text-3xl font-black uppercase italic tracking-tighter mb-1">{profile.name}</h1>
-            <p className="text-zinc-400 font-bold uppercase text-xs tracking-widest mb-4">Member Since {new Date(profile.memberSince).getFullYear()}</p>
-            <div className="flex flex-wrap justify-center md:justify-start gap-4">
-              <Badge className="bg-white/10 hover:bg-white/20 text-white border-none py-2 px-4 rounded-xl">
-                <Award size={14} className="mr-2 text-primary" /> {profile.loyaltyPoints} Points
+          <div>
+            <h1 className="text-lg font-bold">{profile.name}</h1>
+            <p className="text-primary-foreground/60 text-xs">Member since {new Date(profile.memberSince).getFullYear()}</p>
+            <div className="flex gap-2 mt-2">
+              <Badge className="bg-primary-foreground/10 text-primary-foreground border-none text-[10px] px-2 py-0.5">
+                <Award size={10} className="mr-1" /> {profile.loyaltyPoints} Pts
               </Badge>
-              <Badge className="bg-white/10 hover:bg-white/20 text-white border-none py-2 px-4 rounded-xl">
-                <Users size={14} className="mr-2 text-primary" /> {profile.totalTrips} Trips
+              <Badge className="bg-primary-foreground/10 text-primary-foreground border-none text-[10px] px-2 py-0.5">
+                <Users size={10} className="mr-1" /> {profile.totalTrips} Trips
               </Badge>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-6 -mt-16">
-        <div className="grid md:grid-cols-3 gap-8">
-          {/* Sidebar Settings */}
-          <div className="md:col-span-1 space-y-4">
-            <Card className="border-none shadow-xl rounded-3xl overflow-hidden">
-              <CardContent className="p-2">
-                <nav className="space-y-1">
-                  {[
-                    { icon: User, label: "Personal Info", active: true },
-                    { icon: Shield, label: "Security", active: false },
-                    { icon: Bell, label: "Notifications", active: false },
-                    { icon: CreditCard, label: "Payments", active: false },
-                  ].map((item, i) => (
-                    <button 
-                      key={i} 
-                      className={cn(
-                        "w-full flex items-center justify-between p-4 rounded-2xl transition-all font-black uppercase text-[10px] tracking-widest",
-                        item.active ? "bg-primary text-white shadow-lg shadow-primary/20" : "hover:bg-zinc-100 text-zinc-500"
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <item.icon size={16} />
-                        {item.label}
-                      </div>
-                      <ChevronRight size={14} />
-                    </button>
-                  ))}
-                  <button className="w-full flex items-center gap-3 p-4 rounded-2xl text-red-500 hover:bg-red-50 transition-all font-black uppercase text-[10px] tracking-widest mt-4">
-                    <LogOut size={16} />
-                    Sign Out
-                  </button>
-                </nav>
-              </CardContent>
-            </Card>
-          </div>
+      <div className="max-w-md mx-auto px-5 mt-4 space-y-4">
+        {/* Tab Pills */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+          {[
+            { id: "personal", icon: User, label: "Personal" },
+            { id: "security", icon: Shield, label: "Security" },
+            { id: "notifications", icon: Bell, label: "Notif" },
+            { id: "payments", icon: CreditCard, label: "Payment" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                "flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all",
+                activeTab === tab.id
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground"
+              )}
+            >
+              <tab.icon size={14} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-          {/* Edit Profile Form */}
-          <div className="md:col-span-2 space-y-6">
-            <Card className="border-none shadow-xl rounded-3xl overflow-hidden bg-white">
-              <CardHeader className="border-b border-zinc-50 flex flex-row items-center justify-between pb-6">
-                <div>
-                  <CardTitle className="text-xl font-black uppercase italic tracking-tight">Personal Information</CardTitle>
-                  <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mt-1">Manage your details</p>
-                </div>
+        {/* Personal Info Form */}
+        {activeTab === "personal" && (
+          <Card className="border-0 shadow-sm rounded-xl">
+            <CardContent className="p-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-bold">Personal Information</p>
                 {!isEditing ? (
-                  <Button variant="outline" onClick={() => setIsEditing(true)} className="font-black text-[10px] uppercase tracking-widest rounded-xl border-2">Edit</Button>
+                  <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="text-xs h-8 rounded-lg">Edit</Button>
                 ) : (
                   <div className="flex gap-2">
-                    <Button variant="ghost" onClick={() => setIsEditing(false)} className="font-black text-[10px] uppercase tracking-widest rounded-xl">Cancel</Button>
-                    <Button onClick={handleSave} className="font-black text-[10px] uppercase tracking-widest rounded-xl shadow-lg shadow-primary/20">Save</Button>
+                    <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} className="text-xs h-8">Cancel</Button>
+                    <Button size="sm" onClick={handleSave} className="text-xs h-8 rounded-lg">Save</Button>
                   </div>
                 )}
-              </CardHeader>
-              <CardContent className="p-8 space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Full Name</Label>
-                    <div className="relative group">
-                      <User className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-primary transition-colors" size={18} />
-                      <Input 
-                        disabled={!isEditing} 
-                        value={profile.name} 
-                        onChange={e => setProfile({...profile, name: e.target.value})}
-                        className="pl-12 h-14 rounded-2xl bg-zinc-50 border-none shadow-inner font-bold" 
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Email Address</Label>
-                    <div className="relative group">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-primary transition-colors" size={18} />
-                      <Input 
-                        disabled={!isEditing} 
-                        value={profile.email} 
-                        onChange={e => setProfile({...profile, email: e.target.value})}
-                        className="pl-12 h-14 rounded-2xl bg-zinc-50 border-none shadow-inner font-bold" 
-                      />
-                    </div>
+              </div>
+
+              <div className="space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Full Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
+                    <Input disabled={!isEditing} value={profile.name} onChange={e => setProfile({...profile, name: e.target.value})} className="pl-9 h-10 rounded-lg bg-muted border-none text-sm" />
                   </div>
                 </div>
-
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Phone Number</Label>
-                    <div className="relative group">
-                      <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-300 group-focus-within:text-primary transition-colors" size={18} />
-                      <Input 
-                        disabled={!isEditing} 
-                        value={profile.phone} 
-                        onChange={e => setProfile({...profile, phone: e.target.value})}
-                        className="pl-12 h-14 rounded-2xl bg-zinc-50 border-none shadow-inner font-bold" 
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Loyalty ID</Label>
-                    <div className="relative">
-                      <Award className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-200" size={18} />
-                      <Input 
-                        disabled 
-                        value={profile.id} 
-                        className="pl-12 h-14 rounded-2xl bg-zinc-100 border-none text-zinc-400 font-mono font-bold" 
-                      />
-                    </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
+                    <Input disabled={!isEditing} value={profile.email} onChange={e => setProfile({...profile, email: e.target.value})} className="pl-9 h-10 rounded-lg bg-muted border-none text-sm" />
                   </div>
                 </div>
-
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Home Address</Label>
-                  <div className="relative group">
-                    <MapPin className="absolute left-4 top-4 text-zinc-300 group-focus-within:text-primary transition-colors" size={18} />
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Phone</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
+                    <Input disabled={!isEditing} value={profile.phone} onChange={e => setProfile({...profile, phone: e.target.value})} className="pl-9 h-10 rounded-lg bg-muted border-none text-sm" />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Loyalty ID</Label>
+                  <div className="relative">
+                    <Award className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
+                    <Input disabled value={profile.id} className="pl-9 h-10 rounded-lg bg-muted border-none text-sm font-mono text-muted-foreground" />
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Address</Label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-3 text-muted-foreground" size={14} />
                     <textarea 
                       disabled={!isEditing}
                       value={profile.address}
                       onChange={e => setProfile({...profile, address: e.target.value})}
-                      className="w-full pl-12 p-4 min-h-[100px] rounded-2xl bg-zinc-50 border-none shadow-inner font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all resize-none"
+                      className="w-full pl-9 p-3 min-h-[80px] rounded-lg bg-muted border-none text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all resize-none"
                     />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Sign Out */}
+        <button className="w-full flex items-center justify-center gap-2 py-3 text-destructive text-sm font-semibold">
+          <LogOut size={16} />
+          Sign Out
+        </button>
       </div>
+
+      <BottomNav />
     </div>
   );
 }
