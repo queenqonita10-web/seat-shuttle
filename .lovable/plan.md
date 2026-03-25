@@ -1,46 +1,48 @@
 
 
-# Optimasi Tampilan Mobile untuk Semua Halaman User
+# Review Modul Driver & Halaman Baru
 
-## Masalah
-Beberapa halaman user (Tickets, Profile, TicketDetail) menggunakan layout desktop-oriented dengan `max-w-4xl`, grid multi-kolom, padding besar, dan rounded corners berlebihan. Halaman lain (Index, SearchResults, Checkout, SeatSelection, ETicket) sudah mobile-first dengan `max-w-md`.
+## Status Saat Ini
 
-## Perubahan
+Semua 5 route driver (`/driver`, `/driver/trip`, `/driver/pickup`, `/driver/scan`, `/driver/summary`) sudah memiliki halaman. Navigasi antar halaman juga konsisten. Tidak ada route yang mengarah ke halaman yang tidak ada.
 
-### 1. `Tickets.tsx` — Redesign mobile-first
-- Ganti `max-w-4xl` → `max-w-md`, kurangi header padding (`pb-32` → `pb-8`)
-- Ticket cards: kurangi `rounded-[2.5rem]` → `rounded-xl`, `p-8` → `p-4`
-- Info grid: `grid-cols-2` saja (hapus `md:grid-cols-4`)
-- Hapus right-side chevron panel (desktop-only element)
-- Filter pills: ukuran lebih kecil, mobile-friendly
-- Tambahkan `BottomNav`
+**Namun**, modul driver hanya mencakup alur trip aktif. Fitur pendukung yang dibutuhkan driver sehari-hari belum tersedia:
 
-### 2. `Profile.tsx` — Redesign mobile-first
-- Ganti `max-w-4xl` → `max-w-md`
-- Hapus `md:grid-cols-3` sidebar layout → single column stack
-- Pindahkan settings nav ke horizontal pills atau accordion di bawah profile info
-- Kurangi avatar size `h-32 w-32` → `h-20 w-20`
-- Form inputs: single column, kurangi padding
-- Tambahkan `BottomNav`
+1. **Riwayat Trip** -- Dashboard menampilkan "Today's Progress 0/3" tapi tidak ada halaman untuk melihat riwayat trip sebelumnya
+2. **Detail Pendapatan** -- Dashboard menampilkan "Daily Income Rp 0" tapi tidak bisa diklik untuk melihat breakdown
+3. **Profil Driver** -- Tidak ada halaman pengaturan akun driver (nama, kendaraan, shift)
 
-### 3. `TicketDetail.tsx` — Pastikan mobile-friendly
-- Ganti `max-w-4xl` → `max-w-md` jika ada
-- Pastikan single column layout
-- Tambahkan `BottomNav` jika belum ada
+## Rencana: Tambah 3 Halaman Baru
 
-### 4. `DriverTracking.tsx` — Tambah BottomNav
-- Pastikan ada `BottomNav` dan layout konsisten `max-w-md`
+### 1. `/driver/history` — Riwayat Trip
+- List trip yang sudah selesai (dari mockData)
+- Setiap item menampilkan: tanggal, rute, jumlah PAX, status
+- Filter: Hari ini / Minggu ini / Bulan ini
+- Navigasi dari tombol "Today's Progress" di Dashboard
 
-## Prinsip Desain
-- Semua halaman user: `max-w-md mx-auto`, padding `px-4` atau `px-5`
-- `BottomNav` di semua halaman user (dengan `pb-20` untuk spacing)
-- Card corners: `rounded-xl` atau `rounded-lg` (bukan `rounded-[2.5rem]`)
-- Font sizes dan padding sesuai layar 375px-414px
-- Single column layout, tidak ada grid multi-kolom
+### 2. `/driver/earnings` — Detail Pendapatan
+- Ringkasan pendapatan: Hari ini, Minggu ini, Bulan ini
+- List breakdown per trip (rute, jumlah PAX, pendapatan)
+- Simple bar chart mingguan menggunakan div bars
+- Navigasi dari tombol "Daily Income" di Dashboard
 
-## File yang Diubah
-- `src/pages/Tickets.tsx`
-- `src/pages/Profile.tsx`
-- `src/pages/TicketDetail.tsx`
-- `src/pages/DriverTracking.tsx`
+### 3. `/driver/profile` — Profil & Pengaturan Driver
+- Info driver: nama, foto placeholder, rating, total trip
+- Pengaturan: driving mode default, wait limit, notifikasi
+- Tombol logout / go offline
+- Navigasi dari header Dashboard (tambah icon profil)
+
+### 4. Update `DriverDashboard.tsx`
+- Buat "Today's Progress" dan "Daily Income" navigasi ke `/driver/history` dan `/driver/earnings`
+- Tambah tombol profil di header
+
+### 5. Update `App.tsx`
+- Tambah 3 route baru di dalam `/driver`
+
+## File yang Dibuat/Diubah
+- **Baru**: `src/pages/driver/DriverHistory.tsx`
+- **Baru**: `src/pages/driver/DriverEarnings.tsx`
+- **Baru**: `src/pages/driver/DriverProfile.tsx`
+- **Edit**: `src/pages/driver/DriverDashboard.tsx` — tambah navigasi
+- **Edit**: `src/App.tsx` — tambah 3 route
 

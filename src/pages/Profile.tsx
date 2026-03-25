@@ -137,6 +137,42 @@ export default function Profile() {
           </Card>
         )}
 
+        {/* Security Tab */}
+        {activeTab === "security" && (
+          <Card className="border-0 shadow-sm rounded-xl">
+            <CardContent className="p-6 text-center space-y-3">
+              <Shield size={32} className="mx-auto text-muted-foreground" />
+              <p className="text-sm font-semibold">Keamanan Akun</p>
+              <p className="text-xs text-muted-foreground">Fitur ganti password dan verifikasi 2 langkah akan segera hadir.</p>
+              <Badge variant="outline" className="text-[10px]">Coming Soon</Badge>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Notifications Tab */}
+        {activeTab === "notifications" && (
+          <Card className="border-0 shadow-sm rounded-xl">
+            <CardContent className="p-6 text-center space-y-3">
+              <Bell size={32} className="mx-auto text-muted-foreground" />
+              <p className="text-sm font-semibold">Pengaturan Notifikasi</p>
+              <p className="text-xs text-muted-foreground">Atur preferensi notifikasi perjalanan dan promo kamu di sini.</p>
+              <Badge variant="outline" className="text-[10px]">Coming Soon</Badge>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Payment Tab */}
+        {activeTab === "payments" && (
+          <Card className="border-0 shadow-sm rounded-xl">
+            <CardContent className="p-6 text-center space-y-3">
+              <CreditCard size={32} className="mx-auto text-muted-foreground" />
+              <p className="text-sm font-semibold">Metode Pembayaran</p>
+              <p className="text-xs text-muted-foreground">Tambah dan kelola metode pembayaran untuk checkout lebih cepat.</p>
+              <Badge variant="outline" className="text-[10px]">Coming Soon</Badge>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Sign Out */}
         <button className="w-full flex items-center justify-center gap-2 py-3 text-destructive text-sm font-semibold">
           <LogOut size={16} />
