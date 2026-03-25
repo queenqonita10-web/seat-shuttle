@@ -18,7 +18,9 @@ export default function ETicket() {
   const trip = trips.find((t) => t.id === booking.tripId);
   const pickup = pickupPoints.find((p) => p.id === booking.pickupPointId);
   const route = trip ? routes.find((r) => r.id === trip.routeId) : null;
-  const pickupTime = trip && pickup ? getPickupTime(trip.departureTime, pickup) : "";
+  const routePickup = route?.pickupPoints.find((p) => p.id === booking.pickupPointId);
+  const pickupTime = trip && routePickup ? getPickupTime(trip.departureTime, routePickup) : "";
+  const fare = routePickup?.fare ?? 0;
 
   return (
     <div className="min-h-screen bg-background pb-6">
@@ -86,7 +88,7 @@ export default function ETicket() {
             {trip && (
               <div className="pt-2 border-t text-right">
                 <p className="text-xs text-muted-foreground">Total Paid</p>
-                <p className="text-xl font-bold text-primary">{formatPrice(trip.price)}</p>
+                <p className="text-xl font-bold text-primary">{formatPrice(fare)}</p>
               </div>
             )}
           </CardContent>
