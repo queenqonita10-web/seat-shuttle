@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "@/context/BookingContext";
-import { pickupPoints, routes, formatPrice, getPickupTime, trips } from "@/data/mockData";
+import { useRoutes } from "@/hooks/useRoutes";
+import { formatPrice, getPickupTime } from "@/lib/formatters";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,7 +11,8 @@ import { useEffect } from "react";
 
 export default function ETicket() {
   const navigate = useNavigate();
-  const { booking } = useBooking();
+  const { booking, selectedTrip, pickupPoint } = useBooking();
+  const { data: routes = [] } = useRoutes();
 
   useEffect(() => {
     if (!booking) {
@@ -18,17 +20,14 @@ export default function ETicket() {
     }
   }, [booking, navigate]);
 
-  if (!booking) {
-    return null;
-  }
+  if (!booking) return null;
 
-
-  const trip = trips.find((t) => t.id === booking.tripId);
-  const pickup = pickupPoints.find((p) => p.id === booking.pickupPointId);
-  const route = trip ? routes.find((r) => r.id === trip.routeId) : null;
-  const routePickup = route?.pickupPoints.find((p) => p.id === booking.pickupPointId);
-  const pickupTime = trip && routePickup ? getPickupTime(trip.departureTime, routePickup) : "";
-  const fare = routePickup?.fare ?? 0;
+  const route = selectedTrip ? routes.find((r) => r.id === selectedTrip.route_id) : null;
+  const routePickup = route?.pickup_points.find((p) => p.id === booking.pickupPointId);
+  const pickupTime = selectedTrip && routePickup
+    ? getPickupTime(selectedTrip.departure_time, routePickup)
+    : "";
+  const fare = booking.fare ?? routePickup?.fare ?? 0;
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -41,7 +40,6 @@ export default function ETicket() {
       </div>
 
       <div className="mx-auto max-w-md px-5 -mt-4 space-y-4">
-        {/* Ticket card */}
         <Card className="border-0 shadow-lg overflow-hidden">
           <div className="bg-primary/5 p-4 text-center border-b border-dashed">
             <Badge className="bg-secondary text-secondary-foreground mb-2">
@@ -51,13 +49,11 @@ export default function ETicket() {
           </div>
 
           <CardContent className="p-5 space-y-4">
-            {/* QR Code placeholder */}
             <div className="mx-auto h-40 w-40 rounded-xl bg-foreground/5 border-2 border-dashed border-border flex flex-col items-center justify-center gap-2">
               <QrCode size={48} className="text-muted-foreground" />
               <span className="text-[10px] text-muted-foreground">Scan at boarding</span>
             </div>
 
-            {/* Details */}
             <div className="space-y-3 pt-2">
               <div className="flex items-center gap-3">
                 <User size={16} className="text-primary" />
@@ -82,12 +78,12 @@ export default function ETicket() {
                   </div>
                 </div>
               )}
-              {pickup && (
+              {pickupPoint && (
                 <div className="flex items-center gap-3">
                   <MapPin size={16} className="text-primary" />
                   <div>
                     <p className="text-xs text-muted-foreground">Pickup Point</p>
-                    <p className="text-sm font-medium">{pickup.label}</p>
+                    <p className="text-sm font-medium">{pickupPoint.label}</p>
                   </div>
                 </div>
               )}
@@ -107,12 +103,10 @@ export default function ETicket() {
               </div>
             </div>
 
-            {trip && (
-              <div className="pt-2 border-t text-right">
-                <p className="text-xs text-muted-foreground">Total Paid</p>
-                <p className="text-xl font-bold text-primary">{formatPrice(fare)}</p>
-              </div>
-            )}
+            <div className="pt-2 border-t text-right">
+              <p className="text-xs text-muted-foreground">Total Paid</p>
+              <p className="text-xl font-bold text-primary">{formatPrice(fare)}</p>
+            </div>
           </CardContent>
         </Card>
 

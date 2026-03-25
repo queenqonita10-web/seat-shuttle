@@ -3,24 +3,28 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  ChevronLeft, MapPin, Clock, Calendar, Navigation, Info, Phone, ShieldCheck,
-  CheckCircle2, Clock3, Truck, QrCode, Share2, HelpCircle
+  ChevronLeft, MapPin, Clock, Navigation, Info, Phone, ShieldCheck,
+  Truck, QrCode, Share2, HelpCircle
 } from "lucide-react";
-import { userTickets, routes, drivers, formatPrice } from "@/data/mockData";
+import { useTicketById } from "@/hooks/useTickets";
+import { useRoutes } from "@/hooks/useRoutes";
+import { useDrivers } from "@/hooks/useVehicles";
 import { TrackingService, LocationUpdate } from "@/services/trackingService";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner";
 import { BottomNav } from "@/components/BottomNav";
 
 export default function TicketDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [ticket, setTicket] = useState(userTickets.find(t => t.id === id));
+  const { data: ticket, isLoading } = useTicketById(id);
+  const { data: routes = [] } = useRoutes();
+  const { data: drivers = [] } = useDrivers();
   const [driverLocation, setDriverLocation] = useState<LocationUpdate | null>(null);
   
-  const route = routes.find(r => r.id === ticket?.routeId);
-  const driver = drivers.find(d => d.id === "driver-1");
+  const route = routes.find(r => r.id === ticket?.route_id);
+  const driver = drivers[0]; // For now, first driver
 
   useEffect(() => {
     if (!ticket || ticket.status !== "active" || !driver) return;
@@ -36,6 +40,25 @@ export default function TicketDetail() {
     const interval = setInterval(pollTracking, 5000);
     return () => clearInterval(interval);
   }, [ticket, driver]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <div className="bg-primary text-primary-foreground sticky top-0 z-50 px-5 py-4">
+          <div className="max-w-md mx-auto flex items-center gap-3">
+            <button onClick={() => navigate("/tickets")} className="h-9 w-9 rounded-full bg-primary-foreground/10 flex items-center justify-center">
+              <ChevronLeft size={20} />
+            </button>
+            <Skeleton className="h-5 w-32 bg-primary-foreground/20" />
+          </div>
+        </div>
+        <div className="max-w-md mx-auto px-5 mt-4 space-y-4">
+          <Skeleton className="h-40 rounded-xl" />
+          <Skeleton className="h-60 rounded-xl" />
+        </div>
+      </div>
+    );
+  }
 
   if (!ticket) {
     return (
@@ -53,7 +76,6 @@ export default function TicketDetail() {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
       <div className="bg-primary text-primary-foreground sticky top-0 z-50 px-5 py-4">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -77,7 +99,6 @@ export default function TicketDetail() {
       </div>
 
       <div className="max-w-md mx-auto px-5 mt-4 space-y-4">
-        {/* Tracking Card */}
         {isTracking && (
           <Card className="border-0 shadow-sm rounded-xl overflow-hidden ring-2 ring-primary/10">
             <div className="h-40 bg-muted relative overflow-hidden">
@@ -94,7 +115,7 @@ export default function TicketDetail() {
                 <div className="bg-card/90 backdrop-blur-sm p-3 rounded-xl flex items-center justify-between border border-border">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-lg overflow-hidden bg-muted">
-                      <img src={driver?.avatar || "https://api.dicebear.com/7.x/avataaars/svg?seed=Driver"} alt="Driver" className="h-full w-full object-cover" />
+                      <img src={driver?.avatar_url || "https://api.dicebear.com/7.x/avataaars/svg?seed=Driver"} alt="Driver" className="h-full w-full object-cover" />
                     </div>
                     <div>
                       <p className="text-[10px] text-secondary font-semibold uppercase">En Route</p>
@@ -110,7 +131,6 @@ export default function TicketDetail() {
           </Card>
         )}
 
-        {/* Booking Details */}
         <Card className="border-0 shadow-sm rounded-xl">
           <CardContent className="p-4 space-y-4">
             <div className="flex items-center gap-3">
@@ -127,8 +147,8 @@ export default function TicketDetail() {
               {[
                 { icon: MapPin, label: "Origin", value: route?.origin },
                 { icon: Navigation, label: "Destination", value: route?.destination },
-                { icon: Clock, label: "Departure", value: `${ticket.departureDate} · ${ticket.departureTime}` },
-                { icon: ShieldCheck, label: "Seat", value: `#${ticket.seatNumber} (Regular)` },
+                { icon: Clock, label: "Departure", value: `${ticket.departure_date} · ${ticket.departure_time}` },
+                { icon: ShieldCheck, label: "Seat", value: `#${ticket.seat_number} (Regular)` },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">
                   <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
@@ -144,34 +164,16 @@ export default function TicketDetail() {
           </CardContent>
         </Card>
 
-        {/* Timeline */}
         <Card className="border-0 shadow-sm rounded-xl">
           <CardContent className="p-4">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Ride Timeline</p>
-            <div className="relative space-y-4 pl-6">
-              <div className="absolute left-2 top-1 bottom-1 w-0.5 bg-border rounded-full" />
-              {ticket.history.map((h, i) => {
-                const isLast = i === ticket.history.length - 1;
-                return (
-                  <div key={i} className="relative">
-                    <div className={cn(
-                      "absolute -left-[1.15rem] h-4 w-4 rounded-full border-2 border-card z-10",
-                      isLast ? "bg-primary" : "bg-muted-foreground/30"
-                    )} />
-                    <div className="flex items-center justify-between">
-                      <p className={cn("text-xs font-semibold capitalize", isLast ? "text-primary" : "text-muted-foreground")}>
-                        {h.status.replace('_', ' ')}
-                      </p>
-                      <span className="text-[10px] text-muted-foreground">
-                        {new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
-                    </div>
-                    <p className={cn("text-xs mt-0.5", isLast ? "text-foreground" : "text-muted-foreground")}>
-                      {h.description}
-                    </p>
-                  </div>
-                );
-              })}
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Tracking Status</p>
+            <div className="flex items-center gap-2">
+              <Badge className={cn(
+                "text-xs",
+                ticket.tracking_status === "arrived_at_destination" ? "bg-primary/10 text-primary" : "bg-secondary/10 text-secondary"
+              )}>
+                {ticket.tracking_status.replace(/_/g, ' ')}
+              </Badge>
             </div>
 
             <div className="mt-4 pt-4 border-t border-border space-y-2">
