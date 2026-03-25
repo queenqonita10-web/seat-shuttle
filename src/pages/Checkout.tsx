@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "@/context/BookingContext";
-import { routes, formatPrice, getPickupTime } from "@/data/mockData";
+import { routes, formatPrice, getPickupTime, getFareForPickup } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, CreditCard, Wallet, QrCode, MapPin, Armchair, Clock, DollarSign } from "lucide-react";
+import { ArrowLeft, CreditCard, Wallet, QrCode, MapPin, Armchair, Clock, DollarSign, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const paymentMethods = [
@@ -25,7 +25,11 @@ export default function Checkout() {
   }
 
   const route = routes.find((r) => r.id === selectedTrip.routeId);
-  const pickupTime = getPickupTime(selectedTrip.departureTime, pickupPoint);
+  const routePickup = route?.pickupPoints.find((p) => p.id === pickupPoint.id);
+  const fare = routePickup?.fare ?? 0;
+  const pickupTime = routePickup
+    ? getPickupTime(selectedTrip.departureTime, routePickup)
+    : selectedTrip.departureTime;
 
   const handlePay = () => {
     if (!selectedPayment) return;
@@ -57,6 +61,14 @@ export default function Checkout() {
       </div>
 
       <div className="mx-auto max-w-md px-5 mt-4 space-y-4">
+        {/* Boarding reminder */}
+        <div className="flex items-center gap-3 rounded-lg bg-shuttle-warning/10 border border-shuttle-warning/20 p-3">
+          <AlertCircle size={18} className="text-shuttle-warning shrink-0" />
+          <p className="text-xs font-medium text-foreground">
+            Be at <span className="font-bold">{pickupPoint.label}</span> by <span className="font-bold text-shuttle-warning">{pickupTime}</span>
+          </p>
+        </div>
+
         {/* Summary */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-2">
@@ -67,7 +79,7 @@ export default function Checkout() {
               { icon: MapPin, label: "Pickup", value: pickupPoint.label },
               { icon: Clock, label: "Pickup Time", value: pickupTime },
               { icon: Armchair, label: "Seat", value: `#${selectedSeat}` },
-              { icon: DollarSign, label: "Price", value: formatPrice(selectedTrip.price) },
+              { icon: DollarSign, label: "Fare", value: formatPrice(fare) },
             ].map((item) => (
               <div key={item.label} className="flex items-center gap-3">
                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -115,12 +127,11 @@ export default function Checkout() {
         </Card>
       </div>
 
-      {/* Pay button */}
       <div className="fixed bottom-0 left-0 right-0 border-t bg-card shadow-lg">
         <div className="mx-auto max-w-md flex items-center justify-between p-4">
           <div>
             <p className="text-xs text-muted-foreground">Total</p>
-            <p className="text-xl font-bold text-primary">{formatPrice(selectedTrip.price)}</p>
+            <p className="text-xl font-bold text-primary">{formatPrice(fare)}</p>
           </div>
           <Button
             onClick={handlePay}
