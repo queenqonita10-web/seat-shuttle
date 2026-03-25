@@ -1,9 +1,17 @@
-import { PickupPoint, formatPrice } from "@/data/mockData";
+import { formatPrice } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { MapPin, Flag } from "lucide-react";
 
+interface TimelinePickupPoint {
+  id: string;
+  label: string;
+  sort_order: number;
+  time_offset: number;
+  fare: number;
+}
+
 interface RouteTimelineProps {
-  pickupPoints: PickupPoint[];
+  pickupPoints: TimelinePickupPoint[];
   selectedPointId: string;
   departureTime: string;
   destination: string;
@@ -22,7 +30,7 @@ export function RouteTimeline({ pickupPoints, selectedPointId, departureTime, de
     <div className="space-y-0">
       {pickupPoints.map((point, idx) => {
         const isSelected = point.id === selectedPointId;
-        const isPast = point.order < (pickupPoints.find((p) => p.id === selectedPointId)?.order ?? 0);
+        const isPast = point.sort_order < (pickupPoints.find((p) => p.id === selectedPointId)?.sort_order ?? 0);
         const isLast = idx === pickupPoints.length - 1;
 
         return (
@@ -54,7 +62,7 @@ export function RouteTimeline({ pickupPoints, selectedPointId, departureTime, de
                   <span className="text-[10px] text-muted-foreground">{formatPrice(point.fare)}</span>
                 )}
               </div>
-              <div className="text-xs text-muted-foreground">{getTime(point.timeOffset)}</div>
+              <div className="text-xs text-muted-foreground">{getTime(point.time_offset)}</div>
             </div>
           </div>
         );
@@ -69,7 +77,7 @@ export function RouteTimeline({ pickupPoints, selectedPointId, departureTime, de
         <div className="-mt-0.5">
           <div className="text-sm font-semibold text-secondary">{destination}</div>
           <div className="text-xs text-muted-foreground">
-            {getTime(pickupPoints[pickupPoints.length - 1]?.timeOffset + 15)}
+            {getTime(pickupPoints[pickupPoints.length - 1]?.time_offset + 15)}
           </div>
         </div>
       </div>

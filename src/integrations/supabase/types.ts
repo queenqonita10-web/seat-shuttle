@@ -168,6 +168,83 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_transactions: {
+        Row: {
+          amount: number
+          booking_id: string
+          completed_at: string | null
+          created_at: string
+          currency: string
+          error_code: string | null
+          error_message: string | null
+          fraud_status: string | null
+          id: string
+          metadata: Json | null
+          midtrans_order_id: string
+          midtrans_transaction_id: string | null
+          payment_method: string
+          payment_type: string | null
+          snap_redirect_url: string | null
+          snap_token: string | null
+          status: Database["public"]["Enums"]["payment_status_enum"]
+          transaction_status: string | null
+          transaction_time: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          booking_id: string
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          error_code?: string | null
+          error_message?: string | null
+          fraud_status?: string | null
+          id: string
+          metadata?: Json | null
+          midtrans_order_id: string
+          midtrans_transaction_id?: string | null
+          payment_method: string
+          payment_type?: string | null
+          snap_redirect_url?: string | null
+          snap_token?: string | null
+          status?: Database["public"]["Enums"]["payment_status_enum"]
+          transaction_status?: string | null
+          transaction_time?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          booking_id?: string
+          completed_at?: string | null
+          created_at?: string
+          currency?: string
+          error_code?: string | null
+          error_message?: string | null
+          fraud_status?: string | null
+          id?: string
+          metadata?: Json | null
+          midtrans_order_id?: string
+          midtrans_transaction_id?: string | null
+          payment_method?: string
+          payment_type?: string | null
+          snap_redirect_url?: string | null
+          snap_token?: string | null
+          status?: Database["public"]["Enums"]["payment_status_enum"]
+          transaction_status?: string | null
+          transaction_time?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_transactions_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pickup_points: {
         Row: {
           fare: number
@@ -611,6 +688,13 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "driver"
+      payment_status_enum:
+        | "pending"
+        | "processing"
+        | "success"
+        | "failed"
+        | "cancelled"
+        | "expired"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -739,6 +823,14 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "driver"],
+      payment_status_enum: [
+        "pending",
+        "processing",
+        "success",
+        "failed",
+        "cancelled",
+        "expired",
+      ],
     },
   },
 } as const

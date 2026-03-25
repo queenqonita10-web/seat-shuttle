@@ -1,4 +1,4 @@
-﻿import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -9,9 +9,6 @@ interface DriverFilters {
   status?: string;
 }
 
-/**
- * Fetch all admin drivers with optional filters
- */
 export function useAdminDrivers(filters?: DriverFilters) {
   return useQuery<Driver[]>({
     queryKey: ["admin-drivers", filters],
@@ -31,9 +28,6 @@ export function useAdminDrivers(filters?: DriverFilters) {
   });
 }
 
-/**
- * Fetch single driver details
- */
 export function useAdminDriverDetail(driverId: string) {
   return useQuery<Driver>({
     queryKey: ["admin-driver", driverId],
@@ -51,14 +45,11 @@ export function useAdminDriverDetail(driverId: string) {
   });
 }
 
-/**
- * Create new driver
- */
 export function useAdminDriverCreate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (driverData: Omit<Driver, "id" | "created_at" | "updated_at">) => {
+    mutationFn: async (driverData: Omit<Driver, "created_at" | "updated_at">) => {
       const { data, error } = await supabase
         .from("drivers")
         .insert([driverData])
@@ -73,14 +64,11 @@ export function useAdminDriverCreate() {
       toast.success("Driver created successfully");
     },
     onError: (error: Error) => {
-      toast.error(\Failed to create driver: \\);
+      toast.error(`Failed to create driver: ${error.message}`);
     },
   });
 }
 
-/**
- * Update driver
- */
 export function useAdminDriverUpdate() {
   const queryClient = useQueryClient();
 
@@ -107,14 +95,11 @@ export function useAdminDriverUpdate() {
       toast.success("Driver updated successfully");
     },
     onError: (error: Error) => {
-      toast.error(\Failed to update driver: \\);
+      toast.error(`Failed to update driver: ${error.message}`);
     },
   });
 }
 
-/**
- * Delete driver
- */
 export function useAdminDriverDelete() {
   const queryClient = useQueryClient();
 
@@ -129,14 +114,11 @@ export function useAdminDriverDelete() {
       toast.success("Driver deleted successfully");
     },
     onError: (error: Error) => {
-      toast.error(\Failed to delete driver: \\);
+      toast.error(`Failed to delete driver: ${error.message}`);
     },
   });
 }
 
-/**
- * Change driver status
- */
 export function useAdminDriverStatusChange() {
   const queryClient = useQueryClient();
 
@@ -163,7 +145,7 @@ export function useAdminDriverStatusChange() {
       toast.success("Driver status updated");
     },
     onError: (error: Error) => {
-      toast.error(\Failed to update driver status: \\);
+      toast.error(`Failed to update driver status: ${error.message}`);
     },
   });
 }

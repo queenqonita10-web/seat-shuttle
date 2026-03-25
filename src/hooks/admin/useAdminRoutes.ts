@@ -1,4 +1,4 @@
-﻿import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -10,21 +10,13 @@ interface RouteWithPickups extends Route {
   pickup_points?: PickupPoint[];
 }
 
-/**
- * Fetch all admin routes
- */
 export function useAdminRoutes() {
   return useQuery<RouteWithPickups[]>({
     queryKey: ["admin-routes"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("routes")
-        .select(
-          \
-          *,
-          pickup_points(*)
-          \
-        )
+        .select(`*, pickup_points(*)`)
         .order("created_at", { ascending: false });
 
       if (error) throw new Error(error.message);
@@ -34,9 +26,6 @@ export function useAdminRoutes() {
   });
 }
 
-/**
- * Fetch single route details
- */
 export function useAdminRouteDetail(routeId: string) {
   return useQuery<RouteWithPickups>({
     queryKey: ["admin-route", routeId],
@@ -44,12 +33,7 @@ export function useAdminRouteDetail(routeId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("routes")
-        .select(
-          \
-          *,
-          pickup_points(*)
-          \
-        )
+        .select(`*, pickup_points(*)`)
         .eq("id", routeId)
         .single();
 
@@ -59,14 +43,11 @@ export function useAdminRouteDetail(routeId: string) {
   });
 }
 
-/**
- * Create new route
- */
 export function useAdminRouteCreate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (routeData: Omit<Route, "id" | "created_at">) => {
+    mutationFn: async (routeData: Omit<Route, "created_at">) => {
       const { data, error } = await supabase
         .from("routes")
         .insert([routeData])
@@ -81,14 +62,11 @@ export function useAdminRouteCreate() {
       toast.success("Route created successfully");
     },
     onError: (error: Error) => {
-      toast.error(\Failed to create route: \\);
+      toast.error(`Failed to create route: ${error.message}`);
     },
   });
 }
 
-/**
- * Update route
- */
 export function useAdminRouteUpdate() {
   const queryClient = useQueryClient();
 
@@ -115,14 +93,11 @@ export function useAdminRouteUpdate() {
       toast.success("Route updated successfully");
     },
     onError: (error: Error) => {
-      toast.error(\Failed to update route: \\);
+      toast.error(`Failed to update route: ${error.message}`);
     },
   });
 }
 
-/**
- * Delete route
- */
 export function useAdminRouteDelete() {
   const queryClient = useQueryClient();
 
@@ -137,7 +112,7 @@ export function useAdminRouteDelete() {
       toast.success("Route deleted successfully");
     },
     onError: (error: Error) => {
-      toast.error(\Failed to delete route: \\);
+      toast.error(`Failed to delete route: ${error.message}`);
     },
   });
 }

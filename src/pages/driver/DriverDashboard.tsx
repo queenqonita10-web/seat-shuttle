@@ -123,16 +123,16 @@ const DriverDashboard = () => {
               </Badge>
               <div className="flex items-center gap-2 text-xl font-black">
                 <Clock size={24} strokeWidth={3} />
-                {assignedTrip.departureTime}
+                {assignedTrip?.departure_time ?? "--:--"}
               </div>
             </div>
 
             <h2 className="text-4xl font-black leading-tight mb-2 tracking-tight uppercase">
-              {route?.name}
+              {route?.name ?? "No Trip Assigned"}
             </h2>
             <div className="flex items-center gap-2 text-xl font-bold opacity-60 mb-10">
               <MapPin size={24} />
-              <span>To: {route?.destination}</span>
+              <span>To: {route?.destination ?? "—"}</span>
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-10">
@@ -189,7 +189,7 @@ const DriverDashboard = () => {
         </div>
       </div>
 
-      {/* Driving Mode Toggle (Simulate Physical Button) */}
+      {/* Driving Mode Toggle */}
       <button 
         onClick={() => {
           setIsDrivingMode(!isDrivingMode);
@@ -226,56 +226,29 @@ const DriverDashboard = () => {
           </DialogHeader>
 
           <div className="py-8 space-y-6">
-            <div 
-              className={cn(
-                "flex items-center justify-between p-6 rounded-2xl transition-all",
-                checklist.vehicle ? "bg-primary/10 border-primary/20 border-2" : (isDrivingMode ? "bg-white/5 border-2 border-transparent" : "bg-muted/50 border-2 border-transparent")
-              )}
-              onClick={() => setChecklist(prev => ({ ...prev, vehicle: !prev.vehicle }))}
-            >
-              <div className="flex items-center gap-4">
-                <Bus className={cn(checklist.vehicle ? "text-primary" : "opacity-40")} size={28} />
-                <span className="font-black uppercase tracking-tight text-lg">Vehicle Ready</span>
+            {[
+              { key: "vehicle" as const, icon: Bus, label: "Vehicle Ready" },
+              { key: "fuel" as const, icon: Fuel, label: "Fuel Sufficient" },
+              { key: "battery" as const, icon: Battery, label: "Phone Charged" },
+            ].map(({ key, icon: Icon, label }) => (
+              <div
+                key={key}
+                className={cn(
+                  "flex items-center justify-between p-6 rounded-2xl transition-all",
+                  checklist[key] ? "bg-primary/10 border-primary/20 border-2" : (isDrivingMode ? "bg-white/5 border-2 border-transparent" : "bg-muted/50 border-2 border-transparent")
+                )}
+                onClick={() => setChecklist(prev => ({ ...prev, [key]: !prev[key] }))}
+              >
+                <div className="flex items-center gap-4">
+                  <Icon className={cn(checklist[key] ? "text-primary" : "opacity-40")} size={28} />
+                  <span className="font-black uppercase tracking-tight text-lg">{label}</span>
+                </div>
+                <Checkbox
+                  checked={checklist[key]}
+                  className="w-8 h-8 rounded-full border-4 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                />
               </div>
-              <Checkbox 
-                checked={checklist.vehicle} 
-                className="w-8 h-8 rounded-full border-4 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-              />
-            </div>
-
-            <div 
-              className={cn(
-                "flex items-center justify-between p-6 rounded-2xl transition-all",
-                checklist.fuel ? "bg-primary/10 border-primary/20 border-2" : (isDrivingMode ? "bg-white/5 border-2 border-transparent" : "bg-muted/50 border-2 border-transparent")
-              )}
-              onClick={() => setChecklist(prev => ({ ...prev, fuel: !prev.fuel }))}
-            >
-              <div className="flex items-center gap-4">
-                <Fuel className={cn(checklist.fuel ? "text-primary" : "opacity-40")} size={28} />
-                <span className="font-black uppercase tracking-tight text-lg">Fuel Sufficient</span>
-              </div>
-              <Checkbox 
-                checked={checklist.fuel} 
-                className="w-8 h-8 rounded-full border-4 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-              />
-            </div>
-
-            <div 
-              className={cn(
-                "flex items-center justify-between p-6 rounded-2xl transition-all",
-                checklist.battery ? "bg-primary/10 border-primary/20 border-2" : (isDrivingMode ? "bg-white/5 border-2 border-transparent" : "bg-muted/50 border-2 border-transparent")
-              )}
-              onClick={() => setChecklist(prev => ({ ...prev, battery: !prev.battery }))}
-            >
-              <div className="flex items-center gap-4">
-                <Battery className={cn(checklist.battery ? "text-primary" : "opacity-40")} size={28} />
-                <span className="font-black uppercase tracking-tight text-lg">Phone Charged</span>
-              </div>
-              <Checkbox 
-                checked={checklist.battery} 
-                className="w-8 h-8 rounded-full border-4 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-              />
-            </div>
+            ))}
           </div>
 
           <DialogFooter>

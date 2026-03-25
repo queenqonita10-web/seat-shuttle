@@ -1,22 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
 
-export interface PickupPoint {
-  id: string;
-  route_id: string;
-  label: string;
-  description: string | null;
-  sort_order: number;
-  time_offset: number;
-  fare: number;
-  latitude: number | null;
-  longitude: number | null;
-}
+type PickupPoint = Tables<"pickup_points">;
 
-/**
- * Fetch pickup points for a specific route
- * Returns sorted by order
- */
 export function usePickupPoints(routeId: string) {
   return useQuery<PickupPoint[], Error>({
     queryKey: ["pickup-points", routeId],
@@ -27,22 +14,15 @@ export function usePickupPoints(routeId: string) {
         .eq("route_id", routeId)
         .order("sort_order");
 
-      if (error) {
-        console.error("Error fetching pickup points:", error);
-        throw error;
-      }
-
+      if (error) throw error;
       return data || [];
     },
     enabled: !!routeId,
-    staleTime: 15 * 60 * 1000, // 15 minutes
+    staleTime: 15 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
 }
 
-/**
- * Get single pickup point details
- */
 export function usePickupPointDetail(pickupPointId: string, routeId: string) {
   return useQuery<PickupPoint | null, Error>({
     queryKey: ["pickup-point", pickupPointId],

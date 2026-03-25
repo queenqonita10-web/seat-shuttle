@@ -82,8 +82,9 @@ const DriverTripOverview = () => {
     }
   }, [etaAdjustment]);
 
-  const route = routes.find((r) => r.id === activeTrip.routeId);
-  const stops = route?.pickupPoints ?? [];
+  const { data: routesData = [] } = useRoutes();
+  const route = routesData.find((r) => r.id === activeTrip.route_id);
+  const stops = route?.pickup_points ?? [];
   const isLastStop = currentStopIndex >= stops.length;
 
   const handleArrive = () => {
@@ -273,7 +274,7 @@ const DriverTripOverview = () => {
             {stops.map((stop, index) => {
               const isCompleted = index < currentStopIndex;
               const isCurrent = index === currentStopIndex;
-              const stopBookings = bookings.filter((b) => b.pickupPointId === stop.id);
+              const stopBookings = bookings.filter((b) => b.pickup_point_id === stop.id);
               const passengerCount = stopBookings.length;
 
               return (

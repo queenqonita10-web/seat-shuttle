@@ -74,7 +74,7 @@ export function useAdminBookingCreate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (bookingData: Omit<Booking, "id" | "created_at" | "updated_at">) => {
+    mutationFn: async (bookingData: Omit<Booking, "created_at" | "updated_at">) => {
       const { data, error } = await supabase
         .from("bookings")
         .insert([bookingData])

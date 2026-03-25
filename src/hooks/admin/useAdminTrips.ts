@@ -1,4 +1,4 @@
-﻿import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -14,26 +14,21 @@ interface TripFilters {
 }
 
 interface TripWithRelations extends Trip {
-  routes?: any;
-  vehicles?: any;
-  drivers?: any;
+  routes?: { id: string; name: string } | null;
+  vehicles?: { id: string; brand: string; model: string } | null;
+  drivers?: { id: string; name: string; phone: string; status?: string } | null;
 }
 
-/**
- * Fetch all admin trips with optional filters
- */
 export function useAdminTrips(filters?: TripFilters) {
   return useQuery<TripWithRelations[]>({
     queryKey: ["admin-trips", filters],
     queryFn: async () => {
-      let query = supabase.from("trips").select(
-        \
+      let query = supabase.from("trips").select(`
         *,
         routes(id, name),
-        vehicles(id, name, vehicle_type_id),
+        vehicles(id, brand, model),
         drivers(id, name, phone, status)
-        \
-      );
+      `);
 
       if (filters?.status) {
         query = query.eq("status", filters.status);
@@ -56,13 +51,10 @@ export function useAdminTrips(filters?: TripFilters) {
       if (error) throw new Error(error.message);
       return data || [];
     },
-    staleTime: 1000 * 60, // 1 minute
+    staleTime: 1000 * 60,
   });
 }
 
-/**
- * Fetch single trip details
- */
 export function useAdminTripDetail(tripId: string) {
   return useQuery<TripWithRelations>({
     queryKey: ["admin-trip", tripId],
@@ -70,14 +62,12 @@ export function useAdminTripDetail(tripId: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("trips")
-        .select(
-          \
+        .select(`
           *,
           routes(id, name),
-          vehicles(id, name),
+          vehicles(id, brand, model),
           drivers(id, name, phone)
-          \
-        )
+        `)
         .eq("id", tripId)
         .single();
 
@@ -87,14 +77,11 @@ export function useAdminTripDetail(tripId: string) {
   });
 }
 
-/**
- * Create new trip
- */
 export function useAdminTripCreate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (tripData: Omit<Trip, "id" | "created_at" | "updated_at">) => {
+    mutationFn: async (tripData: Omit<Trip, "created_at" | "updated_at">) => {
       const { data, error } = await supabase
         .from("trips")
         .insert([tripData])
@@ -109,14 +96,11 @@ export function useAdminTripCreate() {
       toast.success("Trip created successfully");
     },
     onError: (error: Error) => {
-      toast.error(\Failed to create trip: \\);
+      toast.error(`Failed to create trip: ${error.message}`);
     },
   });
 }
 
-/**
- * Update trip
- */
 export function useAdminTripUpdate() {
   const queryClient = useQueryClient();
 
@@ -143,14 +127,11 @@ export function useAdminTripUpdate() {
       toast.success("Trip updated successfully");
     },
     onError: (error: Error) => {
-      toast.error(\Failed to update trip: \\);
+      toast.error(`Failed to update trip: ${error.message}`);
     },
   });
 }
 
-/**
- * Delete trip
- */
 export function useAdminTripDelete() {
   const queryClient = useQueryClient();
 
@@ -165,14 +146,11 @@ export function useAdminTripDelete() {
       toast.success("Trip deleted successfully");
     },
     onError: (error: Error) => {
-      toast.error(\Failed to delete trip: \\);
+      toast.error(`Failed to delete trip: ${error.message}`);
     },
   });
 }
 
-/**
- * Change trip status
- */
 export function useAdminTripStatusChange() {
   const queryClient = useQueryClient();
 
@@ -199,7 +177,7 @@ export function useAdminTripStatusChange() {
       toast.success("Trip status updated");
     },
     onError: (error: Error) => {
-      toast.error(\Failed to update trip status: \\);
+      toast.error(`Failed to update trip status: ${error.message}`);
     },
   });
 }
