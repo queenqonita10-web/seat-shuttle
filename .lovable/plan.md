@@ -1,48 +1,48 @@
 
 
-# Review & Refinement Seluruh Aplikasi PYU-GO
+# Review Modul Driver & Halaman Baru
 
-## Temuan Masalah
+## Status Saat Ini
 
-### 1. Halaman tanpa BottomNav
-Halaman `SearchResults`, `SeatSelection`, `PickupRoute`, `Checkout`, dan `ETicket` tidak memiliki `BottomNav`. Ini membuat navigasi inkonsisten -- pengguna tidak bisa langsung ke Home/Tickets/Track/Profile dari halaman-halaman tersebut.
+Semua 5 route driver (`/driver`, `/driver/trip`, `/driver/pickup`, `/driver/scan`, `/driver/summary`) sudah memiliki halaman. Navigasi antar halaman juga konsisten. Tidak ada route yang mengarah ke halaman yang tidak ada.
 
-### 2. DriverTracking tanpa booking = halaman kosong
-Jika user mengakses `/track` tanpa booking aktif (misal dari BottomNav), halaman menampilkan konten kosong tanpa fallback karena `pickup` dan `trip` bernilai null.
+**Namun**, modul driver hanya mencakup alur trip aktif. Fitur pendukung yang dibutuhkan driver sehari-hari belum tersedia:
 
-### 3. Bottom bar tertutup BottomNav
-Di `SeatSelection` dan `PickupRoute`, fixed bottom bar (tombol Continue/Checkout) akan tertindih BottomNav jika ditambahkan. Perlu penyesuaian posisi.
+1. **Riwayat Trip** -- Dashboard menampilkan "Today's Progress 0/3" tapi tidak ada halaman untuk melihat riwayat trip sebelumnya
+2. **Detail Pendapatan** -- Dashboard menampilkan "Daily Income Rp 0" tapi tidak bisa diklik untuk melihat breakdown
+3. **Profil Driver** -- Tidak ada halaman pengaturan akun driver (nama, kendaraan, shift)
 
-### 4. Padding bawah tidak konsisten
-`DriverTracking` menggunakan `pb-6` padahal ada BottomNav (butuh `pb-20`). Beberapa halaman lain juga perlu disesuaikan.
+## Rencana: Tambah 3 Halaman Baru
 
-### 5. SearchResults tidak ada BottomNav & back button di header
-Alur linear (search → seat → route → checkout → eticket) tidak perlu BottomNav, tapi perlu konsistensi. Sebaiknya halaman-halaman alur booking tetap tanpa BottomNav (karena ada tombol Back), tapi ETicket sebagai halaman akhir perlu BottomNav.
+### 1. `/driver/history` — Riwayat Trip
+- List trip yang sudah selesai (dari mockData)
+- Setiap item menampilkan: tanggal, rute, jumlah PAX, status
+- Filter: Hari ini / Minggu ini / Bulan ini
+- Navigasi dari tombol "Today's Progress" di Dashboard
 
-### 6. ETicket: tombol "Track Driver" navigasi ke `/tracking` bukan `/track`
-Inkonsisten dengan BottomNav yang mengarah ke `/track`.
+### 2. `/driver/earnings` — Detail Pendapatan
+- Ringkasan pendapatan: Hari ini, Minggu ini, Bulan ini
+- List breakdown per trip (rute, jumlah PAX, pendapatan)
+- Simple bar chart mingguan menggunakan div bars
+- Navigasi dari tombol "Daily Income" di Dashboard
 
-## Rencana Perbaikan
+### 3. `/driver/profile` — Profil & Pengaturan Driver
+- Info driver: nama, foto placeholder, rating, total trip
+- Pengaturan: driving mode default, wait limit, notifikasi
+- Tombol logout / go offline
+- Navigasi dari header Dashboard (tambah icon profil)
 
-### 1. Tambah fallback state di `DriverTracking.tsx`
-- Jika tidak ada booking aktif, tampilkan pesan "Belum ada perjalanan aktif" dengan tombol ke Home
-- Ubah `pb-6` → `pb-20` agar konten tidak tertutup BottomNav
+### 4. Update `DriverDashboard.tsx`
+- Buat "Today's Progress" dan "Daily Income" navigasi ke `/driver/history` dan `/driver/earnings`
+- Tambah tombol profil di header
 
-### 2. Tambah BottomNav di `ETicket.tsx`
-- Tambah `BottomNav` dan `pb-20` karena ini halaman akhir alur booking, user perlu navigasi ke halaman lain
+### 5. Update `App.tsx`
+- Tambah 3 route baru di dalam `/driver`
 
-### 3. Fix link di `ETicket.tsx`
-- Ubah navigasi "Track Driver" dari `/tracking` ke `/track` agar konsisten
-
-### 4. Halaman alur booking (SearchResults, SeatSelection, PickupRoute, Checkout) tetap tanpa BottomNav
-- Ini halaman linear dengan tombol Back, BottomNav akan mengganggu alur
-
-### 5. Minor UI polish
-- Profile: tab Security/Notif/Payment belum ada kontennya -- tambahkan placeholder sederhana
-- DriverTracking: `pb-6` → `pb-20`
-
-## File yang Diubah
-- `src/pages/DriverTracking.tsx` — fallback state + fix padding
-- `src/pages/ETicket.tsx` — tambah BottomNav + fix link `/track`
-- `src/pages/Profile.tsx` — placeholder untuk tab yang belum ada konten
+## File yang Dibuat/Diubah
+- **Baru**: `src/pages/driver/DriverHistory.tsx`
+- **Baru**: `src/pages/driver/DriverEarnings.tsx`
+- **Baru**: `src/pages/driver/DriverProfile.tsx`
+- **Edit**: `src/pages/driver/DriverDashboard.tsx` — tambah navigasi
+- **Edit**: `src/App.tsx` — tambah 3 route
 
