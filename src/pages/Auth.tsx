@@ -109,15 +109,17 @@ export default function Auth() {
       if (signUpError) throw signUpError;
       if (!authData.user) throw new Error("Signup gagal");
 
-      // Assign role
-      const { error: roleError } = await supabase
-        .from("user_roles")
-        .insert([{
-          user_id: authData.user.id,
-          role: registerRole as "admin" | "driver",
-        }]);
+      // Assign role only for admin/driver (passenger doesn't need a role entry)
+      if (registerRole === "driver") {
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert([{
+            user_id: authData.user.id,
+            role: "driver" as const,
+          }]);
 
-      if (roleError && !roleError.message.includes("duplicate")) throw roleError;
+        if (roleError && !roleError.message.includes("duplicate")) throw roleError;
+      }
 
       // Auto-login
       const { error: loginError } = await supabase.auth.signInWithPassword({
@@ -174,11 +176,13 @@ export default function Auth() {
           if (createError) throw createError;
           if (!createData.user) throw new Error("Demo account creation failed");
 
-          // Assign role
-          await supabase.from("user_roles").insert([{
-            user_id: createData.user.id,
-            role: demoRole as "admin" | "driver",
-          }]);
+          // Assign role only for admin/driver
+          if (demoRole !== "passenger") {
+            await supabase.from("user_roles").insert([{
+              user_id: createData.user.id,
+              role: demoRole as "admin" | "driver",
+            }]);
+          }
 
           // Auto-login
           const { error: loginError } = await supabase.auth.signInWithPassword({
