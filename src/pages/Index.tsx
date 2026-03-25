@@ -27,10 +27,12 @@ const Index = () => {
       <div className="bg-primary px-5 pb-10 pt-12 text-primary-foreground">
         <div className="mx-auto max-w-md">
           <div className="mb-1 flex items-center gap-2">
-            <Bus size={28} />
-            <h1 className="text-xl font-bold tracking-tight">ShuttleGo</h1>
+            <div className="bg-white text-primary p-1.5 rounded-lg shadow-inner">
+              <Bus size={24} strokeWidth={3} />
+            </div>
+            <h1 className="text-2xl font-black tracking-tighter uppercase italic">PYU-GO</h1>
           </div>
-          <p className="text-sm text-primary-foreground/80">Book your shuttle ride in seconds</p>
+          <p className="text-sm text-primary-foreground/80 font-medium tracking-tight">Your Premium Ride. Smart & Reliable.</p>
         </div>
       </div>
 

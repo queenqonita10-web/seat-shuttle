@@ -57,14 +57,14 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
-        shuttle: {
-          warning: "hsl(var(--shuttle-warning))",
-          "warning-foreground": "hsl(var(--shuttle-warning-foreground))",
-          success: "hsl(var(--shuttle-success))",
-          "success-foreground": "hsl(var(--shuttle-success-foreground))",
-          "seat-available": "hsl(var(--shuttle-seat-available))",
-          "seat-booked": "hsl(var(--shuttle-seat-booked))",
-          "seat-selected": "hsl(var(--shuttle-seat-selected))",
+        pyugo: {
+          warning: "hsl(var(--pyugo-warning))",
+          "warning-foreground": "hsl(var(--pyugo-warning-foreground))",
+          success: "hsl(var(--pyugo-success))",
+          "success-foreground": "hsl(var(--pyugo-success-foreground))",
+          "seat-available": "hsl(var(--pyugo-seat-available))",
+          "seat-booked": "hsl(var(--pyugo-seat-booked))",
+          "seat-selected": "hsl(var(--pyugo-seat-selected))",
         },
       },
       borderRadius: {

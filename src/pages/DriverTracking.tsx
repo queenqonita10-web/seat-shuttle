@@ -75,7 +75,7 @@ export default function DriverTracking() {
             <ArrowLeft size={16} /> Back
           </button>
           <div className="flex items-center justify-between">
-            <h1 className="text-lg font-bold">Track Your Driver</h1>
+            <h1 className="text-lg font-bold">PYU-GO Tracking</h1>
             <Badge className="bg-destructive/90 text-destructive-foreground text-[10px] animate-pulse">
               ● LIVE
             </Badge>
@@ -129,7 +129,7 @@ export default function DriverTracking() {
                   <g key={stop.id}>
                     {/* Pulse ring for current */}
                     {isCurrent && !arrived && (
-                      <circle cx={pt.x} cy={pt.y} r="10" fill="none" stroke="hsl(var(--shuttle-warning))" strokeWidth="1.5" opacity="0.5">
+                      <circle cx={pt.x} cy={pt.y} r="10" fill="none" stroke="hsl(var(--pyugo-warning))" strokeWidth="1.5" opacity="0.5">
                         <animate attributeName="r" from="6" to="14" dur="1.5s" repeatCount="indefinite" />
                         <animate attributeName="opacity" from="0.6" to="0" dur="1.5s" repeatCount="indefinite" />
                       </circle>
@@ -141,7 +141,7 @@ export default function DriverTracking() {
                       r={isCurrent ? 6 : isUserStop ? 5 : 4}
                       fill={
                         isCurrent
-                          ? "hsl(var(--shuttle-warning))"
+                          ? "hsl(var(--pyugo-warning))"
                           : isUserStop
                           ? "hsl(var(--primary))"
                           : isPassed
@@ -247,7 +247,7 @@ export default function DriverTracking() {
               <p className="text-xs text-muted-foreground">{vehicle?.name ?? "HI ACE"} · B 1234 XY</p>
               <div className="flex items-center gap-0.5 mt-0.5">
                 {[1, 2, 3, 4, 5].map((s) => (
-                  <Star key={s} size={10} className={s <= 4 ? "fill-shuttle-warning text-shuttle-warning" : "text-border"} />
+                  <Star key={s} size={10} className={s <= 4 ? "fill-pyugo-warning text-pyugo-warning" : "text-border"} />
                 ))}
                 <span className="text-[10px] text-muted-foreground ml-1">4.8</span>
               </div>
@@ -278,7 +278,7 @@ export default function DriverTracking() {
                           arrived && isUserStop
                             ? "border-secondary bg-secondary"
                             : isCurrent
-                            ? "border-shuttle-warning bg-shuttle-warning"
+                            ? "border-pyugo-warning bg-pyugo-warning"
                             : isPassed
                             ? "border-primary bg-primary"
                             : "border-border bg-card"
@@ -288,7 +288,7 @@ export default function DriverTracking() {
                           <Check size={10} className="text-primary-foreground" />
                         )}
                         {isCurrent && (
-                          <Bus size={10} className="text-shuttle-warning-foreground" />
+                          <Bus size={10} className="text-pyugo-warning-foreground" />
                         )}
                       </div>
                       {!isLast && (
@@ -298,12 +298,12 @@ export default function DriverTracking() {
 
                     {/* Stop info */}
                     <div className={`pb-4 -mt-0.5 ${isUserStop ? "font-semibold" : ""}`}>
-                      <p className={`text-sm leading-tight ${isCurrent ? "text-shuttle-warning" : isUserStop ? "text-primary" : isPassed ? "text-foreground" : "text-muted-foreground"}`}>
+                      <p className={`text-sm leading-tight ${isCurrent ? "text-pyugo-warning" : isUserStop ? "text-primary" : isPassed ? "text-foreground" : "text-muted-foreground"}`}>
                         {stop.label}
                         {isUserStop && <MapPin size={12} className="inline ml-1 text-primary" />}
                       </p>
                       {isCurrent && (
-                        <span className="text-[10px] text-shuttle-warning">Driver is here</span>
+                        <span className="text-[10px] text-pyugo-warning">Driver is here</span>
                       )}
                     </div>
                   </div>

@@ -34,7 +34,24 @@ export interface Trip {
   departureTime: string;
   vehicleTypeId: string;
   seats: Seat[];
+  driverId?: string;
+  status: "active" | "completed" | "cancelled" | "pending";
 }
+
+export interface Driver {
+  id: string;
+  name: string;
+  phone: string;
+  status: "online" | "offline" | "on_trip";
+  avatar?: string;
+}
+
+export const drivers: Driver[] = [
+  { id: "driver-1", name: "Budi Santoso", phone: "081234567890", status: "on_trip" },
+  { id: "driver-2", name: "Agus Setiawan", phone: "081234567891", status: "online" },
+  { id: "driver-3", name: "Iwan Fals", phone: "081234567892", status: "offline" },
+  { id: "driver-4", name: "Eko Prasetyo", phone: "081234567893", status: "online" },
+];
 
 export interface Booking {
   id: string;
@@ -187,16 +204,16 @@ export const pickupPoints: PickupPoint[] = [
 export const destinations = ["Kota Barat", "Kota Timur", "Kota Selatan", "Kota Utara"];
 
 export const trips: Trip[] = [
-  { id: "trip-1", routeId: "rayon-a", departureTime: "06:00", vehicleTypeId: "hiace-10", seats: generateSeatsForVehicle("hiace-10") },
-  { id: "trip-2", routeId: "rayon-a", departureTime: "07:30", vehicleTypeId: "minibus-5", seats: generateSeatsForVehicle("minibus-5") },
-  { id: "trip-3", routeId: "rayon-a", departureTime: "09:00", vehicleTypeId: "hiace-10", seats: generateSeatsForVehicle("hiace-10") },
-  { id: "trip-4", routeId: "rayon-b", departureTime: "06:30", vehicleTypeId: "minibus-5", seats: generateSeatsForVehicle("minibus-5") },
-  { id: "trip-5", routeId: "rayon-b", departureTime: "08:00", vehicleTypeId: "hiace-10", seats: generateSeatsForVehicle("hiace-10") },
-  { id: "trip-6", routeId: "rayon-c", departureTime: "07:00", vehicleTypeId: "hiace-10", seats: generateSeatsForVehicle("hiace-10") },
-  { id: "trip-7", routeId: "rayon-c", departureTime: "10:00", vehicleTypeId: "minibus-3", seats: generateSeatsForVehicle("minibus-3") },
-  { id: "trip-8", routeId: "rayon-d", departureTime: "06:00", vehicleTypeId: "hiace-10", seats: generateSeatsForVehicle("hiace-10") },
-  { id: "trip-9", routeId: "rayon-d", departureTime: "08:30", vehicleTypeId: "minibus-5", seats: generateSeatsForVehicle("minibus-5") },
-  { id: "trip-10", routeId: "rayon-d", departureTime: "11:00", vehicleTypeId: "hiace-10", seats: generateSeatsForVehicle("hiace-10") },
+  { id: "trip-1", routeId: "rayon-a", departureTime: "06:00", vehicleTypeId: "hiace-10", seats: generateSeatsForVehicle("hiace-10"), driverId: "driver-1", status: "active" },
+  { id: "trip-2", routeId: "rayon-a", departureTime: "07:30", vehicleTypeId: "minibus-5", seats: generateSeatsForVehicle("minibus-5"), driverId: "driver-2", status: "pending" },
+  { id: "trip-3", routeId: "rayon-a", departureTime: "09:00", vehicleTypeId: "hiace-10", seats: generateSeatsForVehicle("hiace-10"), status: "pending" },
+  { id: "trip-4", routeId: "rayon-b", departureTime: "06:30", vehicleTypeId: "minibus-5", seats: generateSeatsForVehicle("minibus-5"), driverId: "driver-4", status: "active" },
+  { id: "trip-5", routeId: "rayon-b", departureTime: "08:00", vehicleTypeId: "hiace-10", seats: generateSeatsForVehicle("hiace-10"), status: "pending" },
+  { id: "trip-6", routeId: "rayon-c", departureTime: "07:00", vehicleTypeId: "hiace-10", seats: generateSeatsForVehicle("hiace-10"), status: "completed" },
+  { id: "trip-7", routeId: "rayon-c", departureTime: "10:00", vehicleTypeId: "minibus-3", seats: generateSeatsForVehicle("minibus-3"), status: "pending" },
+  { id: "trip-8", routeId: "rayon-d", departureTime: "06:00", vehicleTypeId: "hiace-10", seats: generateSeatsForVehicle("hiace-10"), status: "active" },
+  { id: "trip-9", routeId: "rayon-d", departureTime: "08:30", vehicleTypeId: "minibus-5", seats: generateSeatsForVehicle("minibus-5"), status: "pending" },
+  { id: "trip-10", routeId: "rayon-d", departureTime: "11:00", vehicleTypeId: "hiace-10", seats: generateSeatsForVehicle("hiace-10"), status: "pending" },
 ];
 
 export function getRoutesByDestination(destination: string): Route[] {

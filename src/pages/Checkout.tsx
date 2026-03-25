@@ -63,16 +63,16 @@ export default function Checkout() {
           <button onClick={() => navigate("/route")} className="mb-3 flex items-center gap-1 text-sm text-primary-foreground/80">
             <ArrowLeft size={16} /> Back
           </button>
-          <h1 className="text-lg font-bold">Checkout</h1>
+          <h1 className="text-lg font-bold italic tracking-tighter uppercase">PYU-GO CHECKOUT</h1>
         </div>
       </div>
 
       <div className="mx-auto max-w-md px-5 mt-4 space-y-4">
         {/* Boarding reminder */}
-        <div className="flex items-center gap-3 rounded-lg bg-shuttle-warning/10 border border-shuttle-warning/20 p-3">
-          <AlertCircle size={18} className="text-shuttle-warning shrink-0" />
+        <div className="flex items-center gap-3 rounded-lg bg-pyugo-warning/10 border border-pyugo-warning/20 p-3">
+          <AlertCircle size={18} className="text-pyugo-warning shrink-0" />
           <p className="text-xs font-medium text-foreground">
-            Be at <span className="font-bold">{pickupPoint.label}</span> by <span className="font-bold text-shuttle-warning">{pickupTime}</span>
+            Be at <span className="font-bold">{pickupPoint.label}</span> by <span className="font-bold text-pyugo-warning">{pickupTime}</span>
           </p>
         </div>
 

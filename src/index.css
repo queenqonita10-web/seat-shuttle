@@ -13,43 +13,43 @@
     --popover: 0 0% 100%;
     --popover-foreground: 215 25% 12%;
 
-    --primary: 217 91% 55%;
+    --primary: 24 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 152 60% 45%;
+    --secondary: 215 25% 12%;
     --secondary-foreground: 0 0% 100%;
 
     --muted: 214 20% 94%;
     --muted-foreground: 215 15% 50%;
 
-    --accent: 214 20% 94%;
-    --accent-foreground: 215 25% 12%;
+    --accent: 24 100% 96%;
+    --accent-foreground: 24 100% 50%;
 
     --destructive: 0 72% 55%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 214 20% 90%;
     --input: 214 20% 90%;
-    --ring: 217 91% 55%;
+    --ring: 24 100% 50%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 217 91% 55%;
+    --sidebar-background: 215 25% 12%;
+    --sidebar-foreground: 210 20% 98%;
+    --sidebar-primary: 24 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 214 20% 94%;
-    --sidebar-accent-foreground: 215 25% 12%;
-    --sidebar-border: 214 20% 90%;
-    --sidebar-ring: 217 91% 55%;
+    --sidebar-accent: 215 25% 18%;
+    --sidebar-accent-foreground: 210 20% 98%;
+    --sidebar-border: 215 25% 18%;
+    --sidebar-ring: 24 100% 50%;
 
-    --shuttle-warning: 38 92% 50%;
-    --shuttle-warning-foreground: 0 0% 100%;
-    --shuttle-success: 152 60% 45%;
-    --shuttle-success-foreground: 0 0% 100%;
-    --shuttle-seat-available: 210 20% 96%;
-    --shuttle-seat-booked: 215 10% 75%;
-    --shuttle-seat-selected: 217 91% 55%;
+    --pyugo-warning: 38 92% 50%;
+    --pyugo-warning-foreground: 0 0% 100%;
+    --pyugo-success: 152 60% 45%;
+    --pyugo-success-foreground: 0 0% 100%;
+    --pyugo-seat-available: 210 20% 96%;
+    --pyugo-seat-booked: 215 10% 75%;
+    --pyugo-seat-selected: 24 100% 50%;
   }
 
   .dark {
@@ -62,10 +62,10 @@
     --popover: 215 25% 12%;
     --popover-foreground: 210 20% 95%;
 
-    --primary: 217 91% 60%;
+    --primary: 24 100% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 152 60% 40%;
+    --secondary: 215 25% 18%;
     --secondary-foreground: 0 0% 100%;
 
     --muted: 215 20% 18%;
@@ -79,24 +79,24 @@
 
     --border: 215 20% 20%;
     --input: 215 20% 20%;
-    --ring: 217 91% 60%;
+    --ring: 24 100% 55%;
 
     --sidebar-background: 215 25% 10%;
     --sidebar-foreground: 210 20% 90%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary: 24 100% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 215 20% 18%;
     --sidebar-accent-foreground: 210 20% 95%;
     --sidebar-border: 215 20% 20%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-ring: 24 100% 55%;
 
-    --shuttle-warning: 38 92% 50%;
-    --shuttle-warning-foreground: 0 0% 100%;
-    --shuttle-success: 152 60% 40%;
-    --shuttle-success-foreground: 0 0% 100%;
-    --shuttle-seat-available: 215 20% 20%;
-    --shuttle-seat-booked: 215 10% 35%;
-    --shuttle-seat-selected: 217 91% 60%;
+    --pyugo-warning: 38 92% 50%;
+    --pyugo-warning-foreground: 0 0% 100%;
+    --pyugo-success: 152 60% 40%;
+    --pyugo-success-foreground: 0 0% 100%;
+    --pyugo-seat-available: 215 20% 20%;
+    --pyugo-seat-booked: 215 10% 35%;
+    --pyugo-seat-selected: 24 100% 55%;
   }
 }
 

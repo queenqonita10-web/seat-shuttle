@@ -68,7 +68,7 @@ const DriverDashboard = () => {
       )}>
         <div className="mx-auto max-w-md flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-black tracking-tighter uppercase italic">SHUTTLE GO</h1>
+            <h1 className="text-3xl font-black tracking-tighter uppercase italic">PYU-GO</h1>
             <div className="flex items-center gap-2 mt-1">
               <div className={cn("w-3 h-3 rounded-full animate-pulse", isOnline ? "bg-green-500" : "bg-red-500")} />
               <p className="text-sm font-black uppercase tracking-widest opacity-80">

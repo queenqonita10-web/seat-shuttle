@@ -1,5 +1,16 @@
 import { Outlet, useLocation } from "react-router-dom";
-import { LayoutDashboard, BookOpen, Bus, MapPin, Truck, BarChart3 } from "lucide-react";
+import { 
+  LayoutDashboard, 
+  BookOpen, 
+  Bus, 
+  MapPin, 
+  Truck, 
+  BarChart3, 
+  Activity, 
+  DollarSign,
+  Users,
+  CheckSquare
+} from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   SidebarProvider,
@@ -17,11 +28,15 @@ import {
 
 const navItems = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard },
+  { title: "Monitoring", url: "/admin/monitoring", icon: Activity },
   { title: "Bookings", url: "/admin/bookings", icon: BookOpen },
+  { title: "Seat Map", url: "/admin/seats", icon: CheckSquare },
   { title: "Trips", url: "/admin/trips", icon: Bus },
   { title: "Routes", url: "/admin/routes", icon: MapPin },
+  { title: "Drivers", url: "/admin/drivers", icon: Users },
   { title: "Vehicles", url: "/admin/vehicles", icon: Truck },
-  { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
+  { title: "Pricing", url: "/admin/pricing", icon: DollarSign },
+  { title: "Reports", url: "/admin/analytics", icon: BarChart3 },
 ];
 
 function AdminSidebar() {
@@ -33,7 +48,7 @@ function AdminSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>
-            {!collapsed && "ShuttleGo Admin"}
+            {!collapsed && "PYU-GO Admin"}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>

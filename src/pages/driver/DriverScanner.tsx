@@ -89,7 +89,7 @@ const DriverScanner = () => {
         >
           <X size={32} strokeWidth={3} />
         </button>
-        <h1 className="text-2xl font-black uppercase tracking-[0.3em]">SCANNER</h1>
+        <h1 className="text-2xl font-black uppercase tracking-[0.3em]">PYU-GO SCANNER</h1>
         <button 
           onClick={() => setShowManual(true)}
           className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center text-white active:scale-90 border-2 border-white/20"

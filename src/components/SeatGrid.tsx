@@ -35,7 +35,7 @@ export function SeatGrid({ seats, selectedSeat, onSelect, vehicleTypeId }: SeatG
       {/* Legend */}
       <div className="flex items-center justify-center gap-4 text-xs">
         <div className="flex items-center gap-1.5">
-          <div className="h-4 w-4 rounded bg-shuttle-seat-available border border-border" />
+          <div className="h-4 w-4 rounded bg-pyugo-seat-available border border-border" />
           <span className="text-muted-foreground">Available</span>
         </div>
         <div className="flex items-center gap-1.5">
@@ -43,7 +43,7 @@ export function SeatGrid({ seats, selectedSeat, onSelect, vehicleTypeId }: SeatG
           <span className="text-muted-foreground">Selected</span>
         </div>
         <div className="flex items-center gap-1.5">
-          <div className="h-4 w-4 rounded bg-shuttle-seat-booked" />
+          <div className="h-4 w-4 rounded bg-pyugo-seat-booked" />
           <span className="text-muted-foreground">Booked</span>
         </div>
       </div>
@@ -101,9 +101,9 @@ export function SeatGrid({ seats, selectedSeat, onSelect, vehicleTypeId }: SeatG
                       className={cn(
                         "h-10 w-10 rounded-lg text-xs font-medium transition-all duration-150",
                         "flex items-center justify-center",
-                        isBooked && "bg-shuttle-seat-booked cursor-not-allowed text-muted-foreground",
+                        isBooked && "bg-pyugo-seat-booked cursor-not-allowed text-muted-foreground",
                         isSelected && "bg-primary text-primary-foreground shadow-md",
-                        !isBooked && !isSelected && "bg-shuttle-seat-available border border-border hover:border-primary hover:bg-primary/10",
+                        !isBooked && !isSelected && "bg-pyugo-seat-available border border-border hover:border-primary hover:bg-primary/10",
                         animating === seat.number && "animate-seat-pop"
                       )}
                     >

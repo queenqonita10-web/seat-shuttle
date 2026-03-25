@@ -27,7 +27,7 @@ export default function ETicket() {
       <div className="bg-primary px-5 pb-8 pt-12 text-primary-foreground text-center">
         <div className="mx-auto max-w-md">
           <CheckCircle size={48} className="mx-auto mb-2" />
-          <h1 className="text-xl font-bold">Booking Confirmed!</h1>
+          <h1 className="text-xl font-bold italic tracking-tighter uppercase">PYU-GO CONFIRMED!</h1>
           <p className="text-sm text-primary-foreground/80">Your e-ticket is ready</p>
         </div>
       </div>

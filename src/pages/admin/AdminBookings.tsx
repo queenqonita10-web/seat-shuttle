@@ -1,91 +1,225 @@
-import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { mockBookings, routes, trips, formatPrice, getFareForPickup } from "@/data/mockData";
-import type { Booking } from "@/data/mockData";
+import { Input } from "@/components/ui/input";
+import { 
+  mockBookings, 
+  trips, 
+  routes, 
+  formatPrice, 
+  getFareForPickup 
+} from "@/data/mockData";
+import { 
+  Search, 
+  Filter, 
+  Download, 
+  MoreHorizontal, 
+  Calendar, 
+  ChevronDown, 
+  Trash2, 
+  Edit3, 
+  RefreshCcw 
+} from "lucide-react";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export default function AdminBookings() {
-  const [routeFilter, setRouteFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [selected, setSelected] = useState<Booking | null>(null);
+  const [search, setSearch] = useState("");
+  const [selectedBookings, setSelectedBookings] = useState<string[]>([]);
 
-  const filtered = mockBookings.filter((b) => {
-    const trip = trips.find((t) => t.id === b.tripId);
-    if (routeFilter !== "all" && trip?.routeId !== routeFilter) return false;
-    if (statusFilter !== "all" && b.paymentStatus !== statusFilter) return false;
-    return true;
-  });
+  const filteredBookings = mockBookings.filter(b => 
+    b.passengerName.toLowerCase().includes(search.toLowerCase()) ||
+    b.id.toLowerCase().includes(search.toLowerCase())
+  );
 
-  const getBookingDetails = (b: Booking) => {
-    const trip = trips.find((t) => t.id === b.tripId);
-    const route = trip ? routes.find((r) => r.id === trip.routeId) : null;
-    const pickup = route?.pickupPoints.find((p) => p.id === b.pickupPointId);
-    const fare = route ? getFareForPickup(route, b.pickupPointId) : 0;
-    return { trip, route, pickup, fare };
+  const toggleSelectAll = () => {
+    if (selectedBookings.length === filteredBookings.length) {
+      setSelectedBookings([]);
+    } else {
+      setSelectedBookings(filteredBookings.map(b => b.id));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedBookings(prev => 
+      prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+    );
   };
 
   return (
-    <div className="space-y-4">
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <Select value={routeFilter} onValueChange={setRouteFilter}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Semua Rute" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Semua Rute</SelectItem>
-            {routes.map((r) => (
-              <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Semua Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Semua Status</SelectItem>
-            <SelectItem value="paid">Lunas</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-          </SelectContent>
-        </Select>
-        <span className="text-sm text-muted-foreground self-center">{filtered.length} booking</span>
+    <div className="space-y-8 max-w-[1600px] mx-auto">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Booking Management</h2>
+          <p className="text-sm text-muted-foreground mt-1">Manage passenger manifests, seats, and payment status</p>
+        </div>
+        <div className="flex gap-3">
+          <Button variant="outline" className="font-bold">
+            <Download className="h-4 w-4 mr-2" /> Export CSV
+          </Button>
+          <Button className="font-bold">
+            Create Booking
+          </Button>
+        </div>
       </div>
 
-      <Card>
+      <Card className="border-none shadow-sm">
+        <CardHeader className="border-b pb-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search by name or ID..." 
+                className="pl-9 h-10 bg-muted/20 border-none"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" size="sm" className="h-10 px-4 font-bold border-muted">
+                <Calendar className="h-4 w-4 mr-2" /> Date
+              </Button>
+              <Button variant="outline" size="sm" className="h-10 px-4 font-bold border-muted">
+                <Filter className="h-4 w-4 mr-2" /> Route
+              </Button>
+              <Button variant="outline" size="sm" className="h-10 px-4 font-bold border-muted">
+                Status <ChevronDown className="ml-2 h-4 w-4 opacity-50" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
         <CardContent className="p-0">
+          {selectedBookings.length > 0 && (
+            <div className="bg-primary/5 p-3 px-6 border-b flex items-center justify-between animate-in fade-in slide-in-from-top-1">
+              <p className="text-sm font-bold text-primary">
+                {selectedBookings.length} bookings selected
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="h-8 bg-white text-xs font-bold">
+                  <RefreshCcw size={12} className="mr-2" /> Reschedule
+                </Button>
+                <Button variant="outline" size="sm" className="h-8 bg-white text-xs font-bold text-red-600 hover:text-red-700">
+                  <Trash2 size={12} className="mr-2" /> Cancel Bulk
+                </Button>
+              </div>
+            </div>
+          )}
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-muted/30">
               <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Penumpang</TableHead>
-                <TableHead className="hidden md:table-cell">Telepon</TableHead>
-                <TableHead className="hidden md:table-cell">Rute</TableHead>
-                <TableHead className="hidden md:table-cell">Seat</TableHead>
-                <TableHead className="hidden lg:table-cell">Pickup</TableHead>
-                <TableHead>Tarif</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead className="w-[50px] pl-6">
+                  <Checkbox 
+                    checked={selectedBookings.length === filteredBookings.length && filteredBookings.length > 0}
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </TableHead>
+                <TableHead className="uppercase text-[10px] font-black tracking-widest">Booking ID</TableHead>
+                <TableHead className="uppercase text-[10px] font-black tracking-widest">Passenger</TableHead>
+                <TableHead className="uppercase text-[10px] font-black tracking-widest">Route & Stop</TableHead>
+                <TableHead className="uppercase text-[10px] font-black tracking-widest">Seat</TableHead>
+                <TableHead className="uppercase text-[10px] font-black tracking-widest">Payment</TableHead>
+                <TableHead className="uppercase text-[10px] font-black tracking-widest">Status</TableHead>
+                <TableHead className="pr-6 text-right uppercase text-[10px] font-black tracking-widest">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((b) => {
-                const { route, pickup, fare } = getBookingDetails(b);
+              {filteredBookings.map((booking) => {
+                const trip = trips.find(t => t.id === booking.tripId);
+                const route = trip ? routes.find(r => r.id === trip.routeId) : null;
+                const fare = route ? getFareForPickup(route, booking.pickupPointId) : 0;
+
                 return (
-                  <TableRow key={b.id} className="cursor-pointer" onClick={() => setSelected(b)}>
-                    <TableCell className="font-mono text-xs">{b.id}</TableCell>
-                    <TableCell>{b.passengerName}</TableCell>
-                    <TableCell className="hidden md:table-cell text-xs">{b.passengerPhone}</TableCell>
-                    <TableCell className="hidden md:table-cell">{route?.name ?? "-"}</TableCell>
-                    <TableCell className="hidden md:table-cell">{b.seatNumber}</TableCell>
-                    <TableCell className="hidden lg:table-cell text-xs">{pickup?.label ?? "-"}</TableCell>
-                    <TableCell className="text-sm">{formatPrice(fare)}</TableCell>
+                  <TableRow 
+                    key={booking.id} 
+                    className={cn(
+                      "group hover:bg-muted/30 transition-colors",
+                      selectedBookings.includes(booking.id) && "bg-primary/5 hover:bg-primary/10"
+                    )}
+                  >
+                    <TableCell className="pl-6">
+                      <Checkbox 
+                        checked={selectedBookings.includes(booking.id)}
+                        onCheckedChange={() => toggleSelect(booking.id)}
+                      />
+                    </TableCell>
+                    <TableCell className="font-mono text-[10px] font-bold text-muted-foreground">
+                      #{booking.id.toUpperCase()}
+                    </TableCell>
                     <TableCell>
-                      <Badge variant={b.paymentStatus === "paid" ? "default" : "secondary"}>
-                        {b.paymentStatus === "paid" ? "Lunas" : "Pending"}
+                      <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
+                          {booking.passengerName.charAt(0)}
+                        </div>
+                        <div>
+                          <p className="font-bold text-sm leading-none">{booking.passengerName}</p>
+                          <p className="text-[10px] text-muted-foreground mt-1">{booking.passengerPhone}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="text-xs font-bold">{route?.name}</p>
+                        <p className="text-[10px] text-primary font-black uppercase tracking-wider mt-0.5">
+                          {booking.pickupPointId}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-black text-xs border-primary/20 bg-primary/5 text-primary rounded-md">
+                        #{booking.seatNumber}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="space-y-1">
+                        <p className="text-xs font-bold">{formatPrice(fare || 0)}</p>
+                        <Badge className={cn(
+                          "text-[9px] font-black uppercase px-1.5 py-0 rounded-sm",
+                          booking.paymentStatus === "paid" ? "bg-green-500/10 text-green-600" : "bg-amber-500/10 text-amber-600"
+                        )}>
+                          {booking.paymentStatus}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={cn(
+                        "rounded-md px-2 py-0.5 text-[10px] font-black uppercase border-none",
+                        (booking as any).status === "picked_up" ? "bg-green-500/10 text-green-600" : 
+                        (booking as any).status === "no_show" ? "bg-red-500/10 text-red-600" : "bg-blue-500/10 text-blue-600"
+                      )}>
+                        {((booking as any).status || "pending").replace('_', ' ')}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="pr-6 text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <MoreHorizontal size={14} />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 rounded-xl p-2">
+                          <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest opacity-50">Actions</DropdownMenuLabel>
+                          <DropdownMenuItem className="rounded-lg font-bold text-xs py-2 cursor-pointer">
+                            <Edit3 size={14} className="mr-2" /> Edit Booking
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="rounded-lg font-bold text-xs py-2 cursor-pointer">
+                            <RefreshCcw size={14} className="mr-2" /> Change Seat
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="rounded-lg font-bold text-xs py-2 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50">
+                            <Trash2 size={14} className="mr-2" /> Cancel Trip
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 );
@@ -94,37 +228,6 @@ export default function AdminBookings() {
           </Table>
         </CardContent>
       </Card>
-
-      {/* Detail Dialog */}
-      <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
-        {selected && (() => {
-          const { trip, route, pickup, fare } = getBookingDetails(selected);
-          return (
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Detail Booking {selected.id}</DialogTitle>
-                <DialogDescription>Informasi lengkap booking</DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-3 text-sm">
-                <div className="flex justify-between"><span className="text-muted-foreground">Penumpang</span><span className="font-medium">{selected.passengerName}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Telepon</span><span className="font-medium">{selected.passengerPhone}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Rute</span><span>{route?.name} → {route?.destination}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Keberangkatan</span><span>{trip?.departureTime}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Seat</span><span>{selected.seatNumber}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Pickup</span><span>{pickup?.label}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Tarif</span><span className="font-semibold">{formatPrice(fare)}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Pembayaran</span><span>{selected.paymentMethod}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Status</span>
-                  <Badge variant={selected.paymentStatus === "paid" ? "default" : "secondary"}>
-                    {selected.paymentStatus === "paid" ? "Lunas" : "Pending"}
-                  </Badge>
-                </div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Tanggal</span><span>{new Date(selected.createdAt).toLocaleDateString("id-ID")}</span></div>
-              </div>
-            </DialogContent>
-          );
-        })()}
-      </Dialog>
     </div>
   );
 }
