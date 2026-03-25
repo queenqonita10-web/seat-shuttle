@@ -5,6 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { BookingProvider } from "@/context/BookingContext";
 import { DriverProvider } from "@/context/DriverContext";
+import { AuthProvider } from "@/hooks/useAuth";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 import Index from "./pages/Index.tsx";
 import SearchResults from "./pages/SearchResults.tsx";
@@ -17,6 +19,8 @@ import Profile from "./pages/Profile.tsx";
 import Tickets from "./pages/Tickets.tsx";
 import TicketDetail from "./pages/TicketDetail.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import Auth from "./pages/Auth.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
 
 import AdminLayout from "./pages/admin/AdminLayout.tsx";
 import Dashboard from "./pages/admin/Dashboard.tsx";
@@ -47,55 +51,74 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BookingProvider>
-        <DriverProvider>
-          <BrowserRouter>
-            <Routes>
-              {/* User Routes */}
-              <Route path="/" element={<Index />} />
-              <Route path="/search" element={<SearchResults />} />
-              <Route path="/seats" element={<SeatSelection />} />
-              <Route path="/route" element={<PickupRoute />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/tickets" element={<Tickets />} />
-              <Route path="/ticket/:id" element={<TicketDetail />} />
-              <Route path="/eticket" element={<ETicket />} />
-              <Route path="/tracking" element={<DriverTracking />} />
-              <Route path="/track" element={<DriverTracking />} />
+      <AuthProvider>
+        <BookingProvider>
+          <DriverProvider>
+            <BrowserRouter>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
 
-              {/* Admin Routes */}
-              <Route path="/admin" element={<AdminLayout />}>
-                <Route index element={<Dashboard />} />
-                <Route path="monitoring" element={<AdminMonitoring />} />
-                <Route path="bookings" element={<AdminBookings />} />
-                <Route path="seat-map" element={<AdminSeatMap />} />
-                <Route path="layout-designer" element={<AdminLayoutDesigner />} />
-                <Route path="trips" element={<AdminTrips />} />
-                <Route path="routes" element={<AdminRoutes />} />
-                <Route path="drivers" element={<AdminDrivers />} />
-                <Route path="vehicles" element={<AdminVehicles />} />
-                <Route path="pricing" element={<AdminPricing />} />
-                <Route path="analytics" element={<AdminAnalytics />} />
-              </Route>
+                {/* User Routes */}
+                <Route path="/" element={<Index />} />
+                <Route path="/search" element={<SearchResults />} />
+                <Route path="/seats" element={<SeatSelection />} />
+                <Route path="/route" element={<PickupRoute />} />
+                <Route path="/checkout" element={<Checkout />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/tickets" element={<Tickets />} />
+                <Route path="/ticket/:id" element={<TicketDetail />} />
+                <Route path="/eticket" element={<ETicket />} />
+                <Route path="/track" element={<DriverTracking />} />
 
-              {/* Driver Routes */}
-              <Route path="/driver">
-                <Route index element={<DriverDashboard />} />
-                <Route path="trip" element={<DriverTripOverview />} />
-                <Route path="pickup" element={<DriverPickupDetail />} />
-                <Route path="scan" element={<DriverScanner />} />
-                <Route path="summary" element={<DriverTripSummary />} />
-                <Route path="history" element={<DriverHistory />} />
-                <Route path="earnings" element={<DriverEarnings />} />
-                <Route path="profile" element={<DriverProfile />} />
-              </Route>
+                {/* Admin Routes — Protected */}
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute requiredRole="admin">
+                      <AdminLayout />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route index element={<Dashboard />} />
+                  <Route path="monitoring" element={<AdminMonitoring />} />
+                  <Route path="bookings" element={<AdminBookings />} />
+                  <Route path="seat-map" element={<AdminSeatMap />} />
+                  <Route path="layout-designer" element={<AdminLayoutDesigner />} />
+                  <Route path="trips" element={<AdminTrips />} />
+                  <Route path="routes" element={<AdminRoutes />} />
+                  <Route path="drivers" element={<AdminDrivers />} />
+                  <Route path="vehicles" element={<AdminVehicles />} />
+                  <Route path="pricing" element={<AdminPricing />} />
+                  <Route path="analytics" element={<AdminAnalytics />} />
+                </Route>
 
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </DriverProvider>
-      </BookingProvider>
+                {/* Driver Routes — Protected */}
+                <Route path="/driver">
+                  <Route
+                    index
+                    element={
+                      <ProtectedRoute requiredRole="driver">
+                        <DriverDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route path="trip" element={<ProtectedRoute requiredRole="driver"><DriverTripOverview /></ProtectedRoute>} />
+                  <Route path="pickup" element={<ProtectedRoute requiredRole="driver"><DriverPickupDetail /></ProtectedRoute>} />
+                  <Route path="scan" element={<ProtectedRoute requiredRole="driver"><DriverScanner /></ProtectedRoute>} />
+                  <Route path="summary" element={<ProtectedRoute requiredRole="driver"><DriverTripSummary /></ProtectedRoute>} />
+                  <Route path="history" element={<ProtectedRoute requiredRole="driver"><DriverHistory /></ProtectedRoute>} />
+                  <Route path="earnings" element={<ProtectedRoute requiredRole="driver"><DriverEarnings /></ProtectedRoute>} />
+                  <Route path="profile" element={<ProtectedRoute requiredRole="driver"><DriverProfile /></ProtectedRoute>} />
+                </Route>
+
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </DriverProvider>
+        </BookingProvider>
+      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

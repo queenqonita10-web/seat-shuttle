@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "@/context/BookingContext";
-import { routes, getPickupTime, formatPrice } from "@/data/mockData";
+import { useRoutes } from "@/hooks/useRoutes";
+import { formatPrice, getPickupTime } from "@/lib/formatters";
 import { RouteTimeline } from "@/components/RouteTimeline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,24 +10,33 @@ import { ArrowLeft, Route, MapPin, Clock, Navigation } from "lucide-react";
 export default function PickupRoute() {
   const navigate = useNavigate();
   const { selectedTrip, pickupPoint } = useBooking();
+  const { data: routes = [] } = useRoutes();
 
   if (!selectedTrip || !pickupPoint) {
     navigate("/");
     return null;
   }
 
-  const route = routes.find((r) => r.id === selectedTrip.routeId);
+  const route = routes.find((r) => r.id === selectedTrip.route_id);
   if (!route) return null;
 
-  const routePickup = route.pickupPoints.find((p) => p.id === pickupPoint.id);
+  const routePickup = route.pickup_points.find((p) => p.id === pickupPoint.id);
   const pickupTime = routePickup
-    ? getPickupTime(selectedTrip.departureTime, routePickup)
-    : selectedTrip.departureTime;
-  const lastPoint = route.pickupPoints[route.pickupPoints.length - 1];
-  const arrivalTime = getPickupTime(selectedTrip.departureTime, {
-    ...lastPoint,
-    timeOffset: lastPoint.timeOffset + 15,
+    ? getPickupTime(selectedTrip.departure_time, routePickup)
+    : selectedTrip.departure_time;
+  const lastPoint = route.pickup_points[route.pickup_points.length - 1];
+  const arrivalTime = getPickupTime(selectedTrip.departure_time, {
+    time_offset: (lastPoint?.time_offset ?? 0) + 15,
   });
+
+  // Convert pickup_points to RouteTimeline format
+  const timelinePoints = route.pickup_points.map((p) => ({
+    id: p.id,
+    label: p.label,
+    order: p.sort_order,
+    timeOffset: p.time_offset,
+    fare: p.fare,
+  }));
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -45,7 +55,6 @@ export default function PickupRoute() {
       </div>
 
       <div className="mx-auto max-w-md px-5 mt-4 space-y-3">
-        {/* Summary card */}
         <Card className="border-0 shadow-sm bg-secondary/10">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -80,9 +89,9 @@ export default function PickupRoute() {
           </CardHeader>
           <CardContent>
             <RouteTimeline
-              pickupPoints={route.pickupPoints}
+              pickupPoints={timelinePoints}
               selectedPointId={pickupPoint.id}
-              departureTime={selectedTrip.departureTime}
+              departureTime={selectedTrip.departure_time}
               destination={route.destination}
             />
           </CardContent>

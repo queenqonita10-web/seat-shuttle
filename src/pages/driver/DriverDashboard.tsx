@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useDriver } from "@/context/DriverContext";
-import { trips, routes } from "@/data/mockData";
+import { useAllTrips } from "@/hooks/useTrips";
+import { useRoutes } from "@/hooks/useRoutes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,8 +31,10 @@ const DriverDashboard = () => {
     battery: false,
   });
 
-  const assignedTrip = trips[0];
-  const route = routes.find((r) => r.id === assignedTrip.routeId);
+  const { data: tripsData = [] } = useAllTrips();
+  const { data: routesData = [] } = useRoutes();
+  const assignedTrip = tripsData[0];
+  const route = assignedTrip ? routesData.find((r) => r.id === assignedTrip.route_id) : null;
 
   const handleStartTrip = () => {
     if (!checklist.vehicle || !checklist.fuel || !checklist.battery) {

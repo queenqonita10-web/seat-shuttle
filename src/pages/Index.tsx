@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "@/context/BookingContext";
-import { pickupPoints, destinations } from "@/data/mockData";
+import { usePickupPoints, useDestinations } from "@/hooks/useRoutes";
 import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Bus, CalendarIcon, MapPin, Navigation, Search } from "lucide-react";
@@ -15,6 +16,8 @@ import { Bus, CalendarIcon, MapPin, Navigation, Search } from "lucide-react";
 const Index = () => {
   const navigate = useNavigate();
   const { setPickupPoint, setDestination, setDate, pickupPoint, destination, date } = useBooking();
+  const { data: pickupPoints, isLoading: loadingPickups } = usePickupPoints();
+  const { data: destinations, isLoading: loadingDest } = useDestinations();
 
   const handleSearch = () => {
     if (!pickupPoint || !destination || !date) return;
@@ -46,21 +49,28 @@ const Index = () => {
                 <MapPin size={12} />
                 Pickup Point
               </label>
-              <Select
-                value={pickupPoint?.id ?? ""}
-                onValueChange={(val) => setPickupPoint(pickupPoints.find((p) => p.id === val) ?? null)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select pickup point" />
-                </SelectTrigger>
-                <SelectContent>
-                  {pickupPoints.map((p) => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {loadingPickups ? (
+                <Skeleton className="h-10 w-full rounded-md" />
+              ) : (
+                <Select
+                  value={pickupPoint?.id ?? ""}
+                  onValueChange={(val) => {
+                    const found = pickupPoints?.find((p) => p.id === val);
+                    if (found) setPickupPoint(found);
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select pickup point" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(pickupPoints ?? []).map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {/* Destination */}
@@ -69,18 +79,22 @@ const Index = () => {
                 <Navigation size={12} />
                 Destination
               </label>
-              <Select value={destination} onValueChange={setDestination}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Where are you going?" />
-                </SelectTrigger>
-                <SelectContent>
-                  {destinations.map((d) => (
-                    <SelectItem key={d} value={d}>
-                      {d}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              {loadingDest ? (
+                <Skeleton className="h-10 w-full rounded-md" />
+              ) : (
+                <Select value={destination} onValueChange={setDestination}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Where are you going?" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(destinations ?? []).map((d) => (
+                      <SelectItem key={d} value={d}>
+                        {d}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
             </div>
 
             {/* Date */}

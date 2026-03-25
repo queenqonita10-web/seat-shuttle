@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useDriver } from "@/context/DriverContext";
-import { routes } from "@/data/mockData";
+import { useRoutes } from "@/hooks/useRoutes";
 import { Button } from "@/components/ui/button";
 import { 
   ArrowLeft, CheckCircle2, Circle, MapPin, Navigation, 
@@ -133,7 +133,7 @@ const DriverTripOverview = () => {
 
   return (
     <div className={cn(
-      "min-h-screen pb-40 transition-colors duration-500",
+      "min-h-screen pb-28 transition-colors duration-500",
       isDrivingMode ? "bg-black text-white" : "bg-background text-foreground"
     )}>
       {/* High Contrast Header with Simulation Status */}
@@ -215,14 +215,14 @@ const DriverTripOverview = () => {
 
           <div className="flex justify-between items-end mb-6">
             <div>
-              <h1 className="text-3xl font-black uppercase tracking-tighter leading-none mb-1">{route?.name}</h1>
+              <h1 className="text-xl font-black uppercase tracking-tighter leading-none mb-1">{route?.name}</h1>
               <div className="flex items-center gap-2 opacity-60">
                 <Users size={14} strokeWidth={3} />
                 <p className="text-xs font-black uppercase tracking-widest">{totalPax} PAX TOTAL</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-4xl font-black leading-none tracking-tighter">{currentStopIndex}/{stops.length}</p>
+              <p className="text-2xl font-black leading-none tracking-tighter">{currentStopIndex}/{stops.length}</p>
               <p className="text-[10px] uppercase font-black tracking-[0.2em] opacity-50">STOPS</p>
             </div>
           </div>
@@ -239,7 +239,7 @@ const DriverTripOverview = () => {
 
       {/* Floating Active Events / Alerts */}
       {activeEvents.length > 0 && (
-        <div className="fixed top-80 left-6 right-6 z-50 space-y-3 pointer-events-none">
+        <div className="sticky top-[260px] mx-6 z-50 space-y-3 pointer-events-none">
           {activeEvents.map((event) => (
             <div 
               key={event.id}
@@ -328,7 +328,7 @@ const DriverTripOverview = () => {
           /* Simulated Map Navigation Mode */
           <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
             <div className={cn(
-              "relative h-[500px] rounded-[3rem] overflow-hidden border-4 shadow-2xl",
+              "relative h-[360px] rounded-2xl overflow-hidden border-4 shadow-2xl",
               isDrivingMode ? "bg-zinc-900 border-white/10" : "bg-muted border-primary/10"
             )}>
               {/* Weather Effects Layer */}
@@ -428,13 +428,13 @@ const DriverTripOverview = () => {
 
       {/* Sticky Bottom Giant Action Button */}
       <div className={cn(
-        "fixed bottom-0 left-0 right-0 p-6 z-50 transition-all duration-500",
+        "fixed bottom-0 left-0 right-0 p-4 z-50 transition-all duration-500",
         isDrivingMode ? "bg-black/90 backdrop-blur-xl border-t border-white/10" : "bg-white/90 backdrop-blur-md border-t"
       )}>
         <div className="mx-auto max-w-md flex gap-4">
           <Button
             className={cn(
-              "flex-grow h-24 text-3xl font-black gap-4 rounded-[2rem] shadow-2xl transition-all active:scale-95",
+              "flex-grow h-16 text-xl font-black gap-3 rounded-2xl shadow-2xl transition-all active:scale-95",
               isLastStop ? "bg-green-600 hover:bg-green-700 shadow-green-500/20" : "bg-primary shadow-primary/20",
               (!locationVerified) && "border-4 border-yellow-500"
             )}
@@ -443,12 +443,12 @@ const DriverTripOverview = () => {
             {isLastStop ? (
               <>
                 FINISH TRIP
-                <Flag size={32} fill="currentColor" />
+                <Flag size={24} fill="currentColor" />
               </>
             ) : (
               <>
                 ARRIVED
-                <Navigation size={32} fill="currentColor" className="rotate-90" />
+                <Navigation size={24} fill="currentColor" className="rotate-90" />
               </>
             )}
           </Button>
@@ -458,12 +458,12 @@ const DriverTripOverview = () => {
       {/* Multi-Modal Location Verification Dialog */}
       <Dialog open={showLocationDialog} onOpenChange={setShowLocationDialog}>
         <DialogContent className={cn(
-          "sm:max-w-[425px] rounded-[3rem] border-0",
+          "sm:max-w-[425px] rounded-2xl border-0",
           isDrivingMode ? "bg-zinc-900 text-white" : "bg-white"
         )}>
           <DialogHeader>
-            <DialogTitle className="text-3xl font-black uppercase tracking-tight flex items-center gap-3">
-              <Globe className="text-primary" size={32} />
+            <DialogTitle className="text-xl font-black uppercase tracking-tight flex items-center gap-3">
+              <Globe className="text-primary" size={24} />
               Location Check
             </DialogTitle>
             <DialogDescription className="font-bold uppercase tracking-widest text-xs opacity-50">
@@ -471,40 +471,40 @@ const DriverTripOverview = () => {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-8 grid grid-cols-3 gap-4">
+          <div className="py-4 grid grid-cols-3 gap-3">
             <button 
               onClick={() => setLocationMethod("gps")}
               className={cn(
-                "flex flex-col items-center gap-3 p-6 rounded-[2rem] border-4 transition-all",
+                "flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all",
                 locationMethod === "gps" ? "border-primary bg-primary/10" : "border-transparent bg-white/5"
               )}
             >
-              <Navigation size={32} className={locationMethod === "gps" ? "text-primary" : "opacity-30"} />
+              <Navigation size={24} className={locationMethod === "gps" ? "text-primary" : "opacity-30"} />
               <span className="text-[10px] font-black uppercase">GPS Lock</span>
             </button>
             <button 
               onClick={() => setLocationMethod("wifi")}
               className={cn(
-                "flex flex-col items-center gap-3 p-6 rounded-[2rem] border-4 transition-all",
+                "flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all",
                 locationMethod === "wifi" ? "border-primary bg-primary/10" : "border-transparent bg-white/5"
               )}
             >
-              <Wifi size={32} className={locationMethod === "wifi" ? "text-primary" : "opacity-30"} />
+              <Wifi size={24} className={locationMethod === "wifi" ? "text-primary" : "opacity-30"} />
               <span className="text-[10px] font-black uppercase">WiFi Tri</span>
             </button>
             <button 
               onClick={() => setLocationMethod("manual")}
               className={cn(
-                "flex flex-col items-center gap-3 p-6 rounded-[2rem] border-4 transition-all",
+                "flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all",
                 locationMethod === "manual" ? "border-primary bg-primary/10" : "border-transparent bg-white/5"
               )}
             >
-              <MapPin size={32} className={locationMethod === "manual" ? "text-primary" : "opacity-30"} />
+              <MapPin size={24} className={locationMethod === "manual" ? "text-primary" : "opacity-30"} />
               <span className="text-[10px] font-black uppercase">Landmark</span>
             </button>
           </div>
 
-          <div className="p-6 rounded-[2rem] bg-primary/10 border-2 border-primary/20">
+          <div className="p-4 rounded-2xl bg-primary/10 border-2 border-primary/20">
             <p className="text-xs font-black uppercase tracking-widest text-primary mb-2">System Insight</p>
             <p className="text-sm font-bold opacity-70 leading-tight">
               {locationMethod === "gps" ? "Connecting to satellite array... Signal strength: Weak" : 
@@ -515,7 +515,7 @@ const DriverTripOverview = () => {
 
           <DialogFooter>
             <Button
-              className="w-full h-20 text-2xl font-black rounded-2xl transition-all bg-primary text-white"
+              className="w-full h-14 text-lg font-black rounded-2xl transition-all bg-primary text-white"
               onClick={() => {
                 setLocationVerified(true);
                 setShowLocationDialog(false);

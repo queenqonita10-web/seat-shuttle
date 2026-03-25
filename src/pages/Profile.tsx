@@ -5,45 +5,110 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
-  User, Mail, Phone, MapPin, Camera, LogOut, Shield, Bell, CreditCard, Save, Award, Users
+  User, Mail, Phone, MapPin, Camera, LogOut, Shield, Bell, CreditCard, Award, Users
 } from "lucide-react";
-import { currentUser } from "@/data/mockData";
+import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { BottomNav } from "@/components/BottomNav";
+import { useNavigate } from "react-router-dom";
 
 export default function Profile() {
-  const [profile, setProfile] = useState(currentUser);
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
+  const { data: profile, isLoading } = useProfile();
+  const updateProfile = useUpdateProfile();
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+  });
 
-  const handleSave = () => {
-    setIsEditing(false);
-    toast.success("Profil berhasil diperbarui!");
+  const startEditing = () => {
+    if (profile) {
+      setFormData({
+        name: profile.name ?? "",
+        email: profile.email ?? "",
+        phone: profile.phone ?? "",
+        address: profile.address ?? "",
+      });
+    }
+    setIsEditing(true);
   };
+
+  const handleSave = async () => {
+    try {
+      await updateProfile.mutateAsync(formData);
+      setIsEditing(false);
+      toast.success("Profil berhasil diperbarui!");
+    } catch {
+      toast.error("Gagal memperbarui profil");
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth");
+  };
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center pb-20">
+        <div className="text-center space-y-3">
+          <User size={40} className="mx-auto text-muted-foreground/30" />
+          <p className="text-sm text-muted-foreground">Silakan login untuk melihat profil</p>
+          <Button onClick={() => navigate("/auth")} className="rounded-xl">Login</Button>
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background pb-20">
+        <div className="bg-primary text-primary-foreground pt-12 pb-8 px-5">
+          <div className="max-w-md mx-auto flex items-center gap-4">
+            <Skeleton className="h-16 w-16 rounded-full bg-primary-foreground/20" />
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-32 bg-primary-foreground/20" />
+              <Skeleton className="h-3 w-20 bg-primary-foreground/20" />
+            </div>
+          </div>
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  const displayProfile = profile ?? { name: "", email: user.email ?? "", phone: "", address: "", avatar_url: "", loyalty_points: 0, total_trips: 0, created_at: "" };
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      {/* Header */}
       <div className="bg-primary text-primary-foreground pt-12 pb-8 px-5">
         <div className="max-w-md mx-auto flex items-center gap-4">
           <div className="relative">
             <div className="h-16 w-16 rounded-full border-2 border-primary-foreground/30 overflow-hidden bg-muted">
-              <img src={profile.avatar} alt={profile.name} className="h-full w-full object-cover" />
+              <img src={displayProfile.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${displayProfile.name}`} alt={displayProfile.name} className="h-full w-full object-cover" />
             </div>
             <button className="absolute -bottom-1 -right-1 h-7 w-7 bg-secondary text-secondary-foreground rounded-full flex items-center justify-center border-2 border-primary">
               <Camera size={12} />
             </button>
           </div>
           <div>
-            <h1 className="text-lg font-bold">{profile.name}</h1>
-            <p className="text-primary-foreground/60 text-xs">Member since {new Date(profile.memberSince).getFullYear()}</p>
+            <h1 className="text-lg font-bold">{displayProfile.name || user.email}</h1>
+            <p className="text-primary-foreground/60 text-xs">Member since {new Date(displayProfile.created_at || Date.now()).getFullYear()}</p>
             <div className="flex gap-2 mt-2">
               <Badge className="bg-primary-foreground/10 text-primary-foreground border-none text-[10px] px-2 py-0.5">
-                <Award size={10} className="mr-1" /> {profile.loyaltyPoints} Pts
+                <Award size={10} className="mr-1" /> {displayProfile.loyalty_points} Pts
               </Badge>
               <Badge className="bg-primary-foreground/10 text-primary-foreground border-none text-[10px] px-2 py-0.5">
-                <Users size={10} className="mr-1" /> {profile.totalTrips} Trips
+                <Users size={10} className="mr-1" /> {displayProfile.total_trips} Trips
               </Badge>
             </div>
           </div>
@@ -51,7 +116,6 @@ export default function Profile() {
       </div>
 
       <div className="max-w-md mx-auto px-5 mt-4 space-y-4">
-        {/* Tab Pills */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide">
           {[
             { id: "personal", icon: User, label: "Personal" },
@@ -64,9 +128,7 @@ export default function Profile() {
               onClick={() => setActiveTab(tab.id)}
               className={cn(
                 "flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all",
-                activeTab === tab.id
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
+                activeTab === tab.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
               )}
             >
               <tab.icon size={14} />
@@ -75,59 +137,49 @@ export default function Profile() {
           ))}
         </div>
 
-        {/* Personal Info Form */}
         {activeTab === "personal" && (
           <Card className="border-0 shadow-sm rounded-xl">
             <CardContent className="p-4 space-y-4">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-bold">Personal Information</p>
                 {!isEditing ? (
-                  <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="text-xs h-8 rounded-lg">Edit</Button>
+                  <Button variant="outline" size="sm" onClick={startEditing} className="text-xs h-8 rounded-lg">Edit</Button>
                 ) : (
                   <div className="flex gap-2">
                     <Button variant="ghost" size="sm" onClick={() => setIsEditing(false)} className="text-xs h-8">Cancel</Button>
-                    <Button size="sm" onClick={handleSave} className="text-xs h-8 rounded-lg">Save</Button>
+                    <Button size="sm" onClick={handleSave} disabled={updateProfile.isPending} className="text-xs h-8 rounded-lg">
+                      {updateProfile.isPending ? "Saving..." : "Save"}
+                    </Button>
                   </div>
                 )}
               </div>
-
               <div className="space-y-3">
-                <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Full Name</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
-                    <Input disabled={!isEditing} value={profile.name} onChange={e => setProfile({...profile, name: e.target.value})} className="pl-9 h-10 rounded-lg bg-muted border-none text-sm" />
+                {[
+                  { key: "name" as const, label: "Full Name", icon: User, value: isEditing ? formData.name : displayProfile.name },
+                  { key: "email" as const, label: "Email", icon: Mail, value: isEditing ? formData.email : displayProfile.email },
+                  { key: "phone" as const, label: "Phone", icon: Phone, value: isEditing ? formData.phone : displayProfile.phone },
+                ].map((field) => (
+                  <div key={field.key} className="space-y-1">
+                    <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">{field.label}</Label>
+                    <div className="relative">
+                      <field.icon className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
+                      <Input
+                        disabled={!isEditing}
+                        value={field.value ?? ""}
+                        onChange={e => isEditing && setFormData({ ...formData, [field.key]: e.target.value })}
+                        className="pl-9 h-10 rounded-lg bg-muted border-none text-sm"
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Email</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
-                    <Input disabled={!isEditing} value={profile.email} onChange={e => setProfile({...profile, email: e.target.value})} className="pl-9 h-10 rounded-lg bg-muted border-none text-sm" />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Phone</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
-                    <Input disabled={!isEditing} value={profile.phone} onChange={e => setProfile({...profile, phone: e.target.value})} className="pl-9 h-10 rounded-lg bg-muted border-none text-sm" />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Loyalty ID</Label>
-                  <div className="relative">
-                    <Award className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
-                    <Input disabled value={profile.id} className="pl-9 h-10 rounded-lg bg-muted border-none text-sm font-mono text-muted-foreground" />
-                  </div>
-                </div>
+                ))}
                 <div className="space-y-1">
                   <Label className="text-[10px] text-muted-foreground uppercase tracking-wider">Address</Label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-3 text-muted-foreground" size={14} />
                     <textarea 
                       disabled={!isEditing}
-                      value={profile.address}
-                      onChange={e => setProfile({...profile, address: e.target.value})}
+                      value={isEditing ? formData.address : (displayProfile.address ?? "")}
+                      onChange={e => isEditing && setFormData({ ...formData, address: e.target.value })}
                       className="w-full pl-9 p-3 min-h-[80px] rounded-lg bg-muted border-none text-sm focus:outline-none focus:ring-2 focus:ring-ring transition-all resize-none"
                     />
                   </div>
@@ -137,7 +189,6 @@ export default function Profile() {
           </Card>
         )}
 
-        {/* Security Tab */}
         {activeTab === "security" && (
           <Card className="border-0 shadow-sm rounded-xl">
             <CardContent className="p-6 text-center space-y-3">
@@ -149,7 +200,6 @@ export default function Profile() {
           </Card>
         )}
 
-        {/* Notifications Tab */}
         {activeTab === "notifications" && (
           <Card className="border-0 shadow-sm rounded-xl">
             <CardContent className="p-6 text-center space-y-3">
@@ -161,7 +211,6 @@ export default function Profile() {
           </Card>
         )}
 
-        {/* Payment Tab */}
         {activeTab === "payments" && (
           <Card className="border-0 shadow-sm rounded-xl">
             <CardContent className="p-6 text-center space-y-3">
@@ -173,8 +222,7 @@ export default function Profile() {
           </Card>
         )}
 
-        {/* Sign Out */}
-        <button className="w-full flex items-center justify-center gap-2 py-3 text-destructive text-sm font-semibold">
+        <button onClick={handleSignOut} className="w-full flex items-center justify-center gap-2 py-3 text-destructive text-sm font-semibold">
           <LogOut size={16} />
           Sign Out
         </button>
