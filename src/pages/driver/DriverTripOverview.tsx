@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useDriver } from "@/context/DriverContext";
-import { routes } from "@/data/mockData";
+import { useRoutes } from "@/hooks/useRoutes";
 import { Button } from "@/components/ui/button";
 import { 
   ArrowLeft, CheckCircle2, Circle, MapPin, Navigation, 
