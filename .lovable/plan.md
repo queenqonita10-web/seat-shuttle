@@ -1,63 +1,37 @@
 
 
-# Improve UX: Seat Selection & Pickup Clarity
+# Real-Time Driver Tracking UI
 
-Based on the uploaded reference images, the app needs two major updates:
+## Current State
+The existing DriverTracking page has a basic dot-based route visualization and a simple status card. It lacks a map-like feel, driver info, progress bar, stop-by-stop detail, and overall polish.
 
-## 1. Accurate Seat Layouts by Vehicle Type
+## Plan
 
-The reference shows three distinct vehicle layouts that differ from the current generic 4x10 grid:
+### 1. Simulated Map Area (top section)
+- Replace the flat dot row with a **curved SVG path** on a styled map-like background (using a subtle grid pattern or gradient to simulate a map)
+- Animate a **bus icon along the path** that moves between stops
+- Show pickup point markers along the path with the user's stop highlighted
+- Add a pulsing "live" indicator badge in the corner
 
-- **Mini Bus/SUV (without roof rack)**: 3 passenger seats — Row 1: seat 1 + DRIVER, Row 2: seats 2-3, Row 3: Baggage
-- **Mini Bus/SUV (with roof rack)**: 5 passenger seats — Row 1: seat 1 + DRIVER, Row 2: seats 2-3, Row 3: seats 4-5, then BAGGAGE ROOF
-- **HI ACE (without roof rack)**: 10 passenger seats — Row 1: seat 1 + DRIVER, Row 2: seats 2-3-4, Row 3: seats 5-6-7, Row 4: seats 8-9-10, then BAGGAGE
+### 2. Driver Info Card
+- Add a card below the map showing: driver name, vehicle plate number, vehicle type (e.g., "HI ACE"), and a small avatar placeholder
+- Star rating display
 
-### Changes to `mockData.ts`
-- Add a `VehicleType` with id, name, and seat layout definition (rows/cols/skip positions)
-- Add `vehicleType` field to `Trip` interface
-- Replace `generateSeats()` with layout-aware seat generators for each vehicle type
-- Update trips to use specific vehicle types
+### 3. Enhanced Progress Section
+- Replace simple status text with a **vertical timeline/stepper** showing all stops from start to the user's pickup
+- Each stop shows: name, time, and status (passed ✓, current with pulse animation, upcoming)
+- A **progress bar** at the top showing percentage complete (driverPosition / pickupOrder)
 
-### Changes to `SeatGrid.tsx`
-- Render seat grid dynamically based on vehicle layout (variable columns per row)
-- Add "DRIVER" label in the correct position (top-right)
-- Add "BAGGAGE" area indicator at the bottom
-- Show vehicle type name at top of grid
-- Increase tap target size to `h-10 w-10`
+### 4. Improved ETA Display
+- Large countdown timer with minutes and seconds
+- "Arriving in" label with the stop name
+- When arrived: green celebration state with checkmark animation
 
-## 2. Real Route Data with Per-Pickup Fares
+### 5. Action Buttons
+- "Contact Driver" with phone icon
+- "Share Location" button
+- "Cancel Ride" as a text link
 
-The reference shows each pickup point has its own fare (not a flat trip price). For example Rayon A: J1=0, J2=700, J3=950, etc., with a total fare at destination.
-
-### Changes to `mockData.ts`
-- Add `fare` field to `PickupPoint` interface (fare in Rupiah from that point)
-- Update pickup point data per rayon with real times and fares from the reference
-- Each route gets its own pickup points array with correct `timeOffset` and `fare` values
-- Update `Trip.price` to be dynamic based on selected pickup point, or remove flat price
-- Add helper `getFareForPickup(route, pickupPointId)` function
-
-### Changes to `SearchResults.tsx`
-- Show fare based on selected pickup point instead of flat trip price
-- Make pickup time more prominent with a colored badge
-
-### Changes to `SeatSelection.tsx`
-- Add pickup info banner below header showing pickup point + estimated time
-- Show seat position label (e.g., "Window" / "Aisle") in bottom bar
-
-### Changes to `PickupRoute.tsx`
-- Show fare at each pickup point in the timeline
-- Add summary card: "Board at [point] · Arrive by [time]"
-
-### Changes to `Checkout.tsx`
-- Add boarding reminder banner: "Be at [pickup point] by [time]"
-- Show fare from selected pickup point (not flat price)
-
-## Files Modified
-- `src/data/mockData.ts` — vehicle types, per-pickup fares, real route data
-- `src/components/SeatGrid.tsx` — dynamic layout, driver/baggage labels, larger buttons
-- `src/pages/SeatSelection.tsx` — pickup banner, seat position info
-- `src/pages/SearchResults.tsx` — pickup-based fare, prominent pickup time
-- `src/pages/PickupRoute.tsx` — fare per stop, summary card
-- `src/pages/Checkout.tsx` — boarding reminder, correct fare
-- `src/context/BookingContext.tsx` — no changes needed
+### Files Modified
+- `src/pages/DriverTracking.tsx` — full rewrite of the tracking UI with map simulation, driver info, vertical timeline, enhanced ETA, and action buttons
 
