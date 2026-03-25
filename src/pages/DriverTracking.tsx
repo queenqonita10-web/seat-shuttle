@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, Bus, MapPin, Phone, Share2, Star, Check, User } from "lucide-react";
+import { BottomNav } from "@/components/BottomNav";
 
 export default function DriverTracking() {
   const navigate = useNavigate();
