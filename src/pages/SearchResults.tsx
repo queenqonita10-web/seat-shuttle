@@ -1,30 +1,33 @@
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "@/context/BookingContext";
-import { routes, getTripsByRoute, getAvailableSeats, formatPrice, getPickupTime, getFareForPickup, getVehicleType } from "@/data/mockData";
+import { useRoutesByDestination } from "@/hooks/useRoutes";
+import { useTripsByRoutes } from "@/hooks/useTrips";
+import { useVehicleTypes } from "@/hooks/useVehicles";
+import { formatPrice, getPickupTime } from "@/lib/formatters";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Clock, Users, Bus } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
 
 export default function SearchResults() {
   const navigate = useNavigate();
   const { pickupPoint, destination, setSelectedTrip } = useBooking();
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 800);
-    return () => clearTimeout(timer);
-  }, []);
+  const { data: matchingRoutes = [], isLoading: loadingRoutes } = useRoutesByDestination(destination);
+  const routeIds = useMemo(() => matchingRoutes.map((r) => r.id), [matchingRoutes]);
+  const { data: allTrips = [], isLoading: loadingTrips } = useTripsByRoutes(routeIds);
+  const { data: vehicleTypes = [] } = useVehicleTypes();
 
   if (!pickupPoint || !destination) {
     navigate("/");
     return null;
   }
 
-  const matchingRoutes = routes.filter((r) => r.destination === destination);
-  const allTrips = matchingRoutes.flatMap((r) => getTripsByRoute(r.id));
+  const loading = loadingRoutes || loadingTrips;
+
+  const getVehicleType = (id: string) => vehicleTypes.find((v) => v.id === id);
 
   const handleSelect = (tripId: string) => {
     const trip = allTrips.find((t) => t.id === tripId);
@@ -62,14 +65,14 @@ export default function SearchResults() {
               </Card>
             ))
           : allTrips.map((trip) => {
-              const route = matchingRoutes.find((r) => r.id === trip.routeId)!;
-              const routePickup = route.pickupPoints.find((p) => p.id === pickupPoint.id);
-              const fare = routePickup ? routePickup.fare : 0;
-              const available = getAvailableSeats(trip);
+              const route = matchingRoutes.find((r) => r.id === trip.route_id);
+              const routePickup = route?.pickup_points.find((p) => p.id === pickupPoint.id);
+              const fare = routePickup?.fare ?? 0;
+              const available = trip.seats.filter((s) => s.status === "available").length;
               const pickupTime = routePickup
-                ? getPickupTime(trip.departureTime, routePickup)
-                : trip.departureTime;
-              const vt = getVehicleType(trip.vehicleTypeId);
+                ? getPickupTime(trip.departure_time, routePickup)
+                : trip.departure_time;
+              const vt = getVehicleType(trip.vehicle_type_id);
 
               return (
                 <Card key={trip.id} className="border-0 shadow-sm animate-fade-up">
@@ -78,9 +81,8 @@ export default function SearchResults() {
                       <div>
                         <div className="flex items-center gap-2">
                           <Clock size={14} className="text-muted-foreground" />
-                          <span className="font-semibold text-lg">{trip.departureTime}</span>
+                          <span className="font-semibold text-lg">{trip.departure_time}</span>
                         </div>
-                        {/* Prominent pickup time */}
                         <div className="ml-[22px] mt-1 flex items-center gap-1.5">
                           <Badge variant="secondary" className="text-[10px] px-2 py-0.5 bg-secondary/15 text-secondary border-0 font-semibold">
                             🚏 Board at {pickupTime}
@@ -107,7 +109,7 @@ export default function SearchResults() {
                         </div>
                         <div className="flex items-center gap-1">
                           <Bus size={12} className="text-muted-foreground" />
-                          <span className="text-[10px] text-muted-foreground">{vt.name}</span>
+                          <span className="text-[10px] text-muted-foreground">{vt?.name ?? trip.vehicle_type_id}</span>
                         </div>
                       </div>
                       <Button size="sm" onClick={() => handleSelect(trip.id)}>

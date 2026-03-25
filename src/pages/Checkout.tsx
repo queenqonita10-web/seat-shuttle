@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "@/context/BookingContext";
-import { routes, formatPrice, getPickupTime } from "@/data/mockData";
+import { useRoutes } from "@/hooks/useRoutes";
+import { useCreateBooking } from "@/hooks/useBookings";
+import { formatPrice, getPickupTime } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, CreditCard, Wallet, QrCode, MapPin, Armchair, Clock, DollarSign, AlertCircle, User, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 const paymentMethods = [
   { id: "ewallet", label: "E-Wallet", icon: Wallet, description: "GoPay, OVO, Dana" },
@@ -18,6 +21,8 @@ const paymentMethods = [
 export default function Checkout() {
   const navigate = useNavigate();
   const { selectedTrip, selectedSeat, pickupPoint, passengerName, passengerPhone, setPassengerName, setPassengerPhone, setBooking } = useBooking();
+  const { data: routes = [] } = useRoutes();
+  const createBooking = useCreateBooking();
   const [selectedPayment, setSelectedPayment] = useState("");
   const [processing, setProcessing] = useState(false);
 
@@ -26,23 +31,34 @@ export default function Checkout() {
     return null;
   }
 
-  const route = routes.find((r) => r.id === selectedTrip.routeId);
-  const routePickup = route?.pickupPoints.find((p) => p.id === pickupPoint.id);
+  const route = routes.find((r) => r.id === selectedTrip.route_id);
+  const routePickup = route?.pickup_points.find((p) => p.id === pickupPoint.id);
   const fare = routePickup?.fare ?? 0;
   const pickupTime = routePickup
-    ? getPickupTime(selectedTrip.departureTime, routePickup)
-    : selectedTrip.departureTime;
+    ? getPickupTime(selectedTrip.departure_time, routePickup)
+    : selectedTrip.departure_time;
 
   const isNameValid = passengerName.trim().length >= 3;
   const isPhoneValid = /^08\d{8,12}$/.test(passengerPhone.trim());
   const canPay = isNameValid && isPhoneValid && !!selectedPayment;
 
-  const handlePay = () => {
+  const handlePay = async () => {
     if (!canPay) return;
     setProcessing(true);
-    setTimeout(() => {
+    
+    try {
+      const result = await createBooking.mutateAsync({
+        tripId: selectedTrip.id,
+        seatNumber: selectedSeat,
+        pickupPointId: pickupPoint.id,
+        passengerName: passengerName.trim(),
+        passengerPhone: passengerPhone.trim(),
+        paymentMethod: selectedPayment,
+        fare,
+      });
+
       setBooking({
-        id: `BK-${Date.now()}`,
+        id: result.bookingId,
         tripId: selectedTrip.id,
         seatNumber: selectedSeat,
         pickupPointId: pickupPoint.id,
@@ -51,10 +67,16 @@ export default function Checkout() {
         paymentMethod: selectedPayment,
         paymentStatus: "paid",
         status: "pending",
+        fare,
         createdAt: new Date().toISOString(),
       });
       navigate("/eticket");
-    }, 1500);
+    } catch (error) {
+      toast.error("Gagal membuat booking. Silakan coba lagi.");
+      console.error(error);
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (
@@ -69,7 +91,6 @@ export default function Checkout() {
       </div>
 
       <div className="mx-auto max-w-md px-5 mt-4 space-y-4">
-        {/* Boarding reminder */}
         <div className="flex items-center gap-3 rounded-lg bg-pyugo-warning/10 border border-pyugo-warning/20 p-3">
           <AlertCircle size={18} className="text-pyugo-warning shrink-0" />
           <p className="text-xs font-medium text-foreground">
@@ -77,7 +98,6 @@ export default function Checkout() {
           </p>
         </div>
 
-        {/* Passenger Biodata */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Data Penumpang</CardTitle>
@@ -87,40 +107,19 @@ export default function Checkout() {
               <Label htmlFor="name" className="flex items-center gap-1.5 text-xs">
                 <User size={12} className="text-primary" /> Nama Lengkap
               </Label>
-              <Input
-                id="name"
-                placeholder="Masukkan nama lengkap"
-                maxLength={100}
-                value={passengerName}
-                onChange={(e) => setPassengerName(e.target.value)}
-              />
-              {passengerName.length > 0 && !isNameValid && (
-                <p className="text-xs text-destructive">Minimal 3 karakter</p>
-              )}
+              <Input id="name" placeholder="Masukkan nama lengkap" maxLength={100} value={passengerName} onChange={(e) => setPassengerName(e.target.value)} />
+              {passengerName.length > 0 && !isNameValid && <p className="text-xs text-destructive">Minimal 3 karakter</p>}
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="phone" className="flex items-center gap-1.5 text-xs">
                 <Phone size={12} className="text-primary" /> No. Telepon
               </Label>
-              <Input
-                id="phone"
-                placeholder="08xxxxxxxxxx"
-                maxLength={15}
-                value={passengerPhone}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/[^0-9]/g, "");
-                  setPassengerPhone(val);
-                }}
-                inputMode="tel"
-              />
-              {passengerPhone.length > 0 && !isPhoneValid && (
-                <p className="text-xs text-destructive">Format: 08xxxxxxxxxx (10-14 digit)</p>
-              )}
+              <Input id="phone" placeholder="08xxxxxxxxxx" maxLength={15} value={passengerPhone} onChange={(e) => setPassengerPhone(e.target.value.replace(/[^0-9]/g, ""))} inputMode="tel" />
+              {passengerPhone.length > 0 && !isPhoneValid && <p className="text-xs text-destructive">Format: 08xxxxxxxxxx (10-14 digit)</p>}
             </div>
           </CardContent>
         </Card>
 
-        {/* Summary */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Booking Summary</CardTitle>
@@ -145,7 +144,6 @@ export default function Checkout() {
           </CardContent>
         </Card>
 
-        {/* Payment */}
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Payment Method</CardTitle>
@@ -157,15 +155,10 @@ export default function Checkout() {
                 onClick={() => setSelectedPayment(method.id)}
                 className={cn(
                   "w-full flex items-center gap-3 p-3 rounded-lg border transition-all",
-                  selectedPayment === method.id
-                    ? "border-primary bg-primary/5 shadow-sm"
-                    : "border-border hover:border-primary/40"
+                  selectedPayment === method.id ? "border-primary bg-primary/5 shadow-sm" : "border-border hover:border-primary/40"
                 )}
               >
-                <div className={cn(
-                  "h-10 w-10 rounded-lg flex items-center justify-center",
-                  selectedPayment === method.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
-                )}>
+                <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center", selectedPayment === method.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground")}>
                   <method.icon size={18} />
                 </div>
                 <div className="text-left">
@@ -184,11 +177,7 @@ export default function Checkout() {
             <p className="text-xs text-muted-foreground">Total</p>
             <p className="text-xl font-bold text-primary">{formatPrice(fare)}</p>
           </div>
-          <Button
-            onClick={handlePay}
-            disabled={!canPay || processing}
-            className="px-8 h-11 font-semibold bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-          >
+          <Button onClick={handlePay} disabled={!canPay || processing} className="px-8 h-11 font-semibold bg-secondary hover:bg-secondary/90 text-secondary-foreground">
             {processing ? "Processing..." : "Pay Now"}
           </Button>
         </div>

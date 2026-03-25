@@ -1,26 +1,68 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
-import { PickupPoint, Trip, Booking } from "@/data/mockData";
+
+// DB-compatible types for booking flow
+export interface BookingPickupPoint {
+  id: string;
+  label: string;
+  sort_order: number;
+  time_offset: number;
+  fare: number;
+}
+
+export interface BookingSeat {
+  id: string;
+  seat_number: string;
+  row_num: number;
+  col_num: number;
+  status: string;
+}
+
+export interface BookingTrip {
+  id: string;
+  route_id: string;
+  departure_time: string;
+  vehicle_type_id: string;
+  vehicle_id: string | null;
+  driver_id: string | null;
+  status: string;
+  departure_date: string;
+  seats: BookingSeat[];
+}
+
+export interface BookingData {
+  id: string;
+  tripId: string;
+  seatNumber: string;
+  pickupPointId: string;
+  passengerName: string;
+  passengerPhone: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  status: string;
+  fare: number;
+  createdAt: string;
+}
 
 interface BookingState {
-  pickupPoint: PickupPoint | null;
+  pickupPoint: BookingPickupPoint | null;
   destination: string;
   date: Date | null;
-  selectedTrip: Trip | null;
+  selectedTrip: BookingTrip | null;
   selectedSeat: string | null;
   passengerName: string;
   passengerPhone: string;
-  booking: Booking | null;
+  booking: BookingData | null;
 }
 
 interface BookingContextType extends BookingState {
-  setPickupPoint: (p: PickupPoint | null) => void;
+  setPickupPoint: (p: BookingPickupPoint | null) => void;
   setDestination: (d: string) => void;
   setDate: (d: Date | null) => void;
-  setSelectedTrip: (t: Trip | null) => void;
+  setSelectedTrip: (t: BookingTrip | null) => void;
   setSelectedSeat: (s: string | null) => void;
   setPassengerName: (n: string) => void;
   setPassengerPhone: (p: string) => void;
-  setBooking: (b: Booking | null) => void;
+  setBooking: (b: BookingData | null) => void;
   reset: () => void;
 }
 
