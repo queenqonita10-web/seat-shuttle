@@ -7,6 +7,8 @@ interface BookingState {
   date: Date | null;
   selectedTrip: Trip | null;
   selectedSeat: string | null;
+  passengerName: string;
+  passengerPhone: string;
   booking: Booking | null;
 }
 
@@ -16,6 +18,8 @@ interface BookingContextType extends BookingState {
   setDate: (d: Date | null) => void;
   setSelectedTrip: (t: Trip | null) => void;
   setSelectedSeat: (s: string | null) => void;
+  setPassengerName: (n: string) => void;
+  setPassengerPhone: (p: string) => void;
   setBooking: (b: Booking | null) => void;
   reset: () => void;
 }
@@ -26,6 +30,8 @@ const initial: BookingState = {
   date: null,
   selectedTrip: null,
   selectedSeat: null,
+  passengerName: "",
+  passengerPhone: "",
   booking: null,
 };
 
@@ -41,6 +47,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     setDate: (d) => setState((s) => ({ ...s, date: d })),
     setSelectedTrip: (t) => setState((s) => ({ ...s, selectedTrip: t })),
     setSelectedSeat: (s) => setState((prev) => ({ ...prev, selectedSeat: s })),
+    setPassengerName: (n) => setState((s) => ({ ...s, passengerName: n })),
+    setPassengerPhone: (p) => setState((s) => ({ ...s, passengerPhone: p })),
     setBooking: (b) => setState((s) => ({ ...s, booking: b })),
     reset: () => setState(initial),
   };
