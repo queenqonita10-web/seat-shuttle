@@ -101,6 +101,7 @@ const DriverDashboard = () => {
             <Power size={32} strokeWidth={3} />
            </button>
           </div>
+        </div>
       </div>
 
       <div className="mx-auto max-w-md px-6 -mt-8 space-y-6">
