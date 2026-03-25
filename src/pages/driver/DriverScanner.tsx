@@ -52,8 +52,8 @@ const DriverScanner = () => {
   const handleManualCheckin = () => {
     // Simulate manual checkin by name or code
     const found = bookings.find(b => 
-      b.passengerName.toLowerCase().includes(manualCode.toLowerCase()) || 
-      b.seatNumber.includes(manualCode)
+      b.passenger_name.toLowerCase().includes(manualCode.toLowerCase()) || 
+      b.seat_number.includes(manualCode)
     );
 
     if (found) {

@@ -1,7 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "@/context/BookingContext";
-import { pickupPoints, getVehicleType, trips } from "@/data/mockData";
+import { useRoutes } from "@/hooks/useRoutes";
+import { useVehicleTypes } from "@/hooks/useVehicles";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,13 +20,24 @@ export default function DriverTracking() {
   const navigate = useNavigate();
   const { booking } = useBooking();
 
-  const pickup = booking ? pickupPoints.find((p) => p.id === booking.pickupPointId) : null;
-  const pickupOrder = pickup?.order ?? 5;
-  const trip = booking ? trips.find((t) => t.id === booking.tripId) : null;
-  const vehicle = trip ? getVehicleType(trip.vehicleTypeId) : null;
+  const { data: routes = [] } = useRoutes();
+  const { data: allTrips = [] } = useQuery({
+    queryKey: ["trips-all"],
+    queryFn: async () => {
+      const { data } = await supabase.from("trips").select("*");
+      return data || [];
+    },
+  });
+  const { data: vehicleTypes = [] } = useVehicleTypes();
+
+  const trip = booking ? allTrips.find((t) => t.id === booking.tripId) : null;
+  const route = trip ? routes.find((r) => r.id === trip.route_id) : null;
+  const pickup = booking && route ? route.pickup_points.find((p) => p.id === booking.pickupPointId) : null;
+  const pickupOrder = pickup?.sort_order ?? 5;
+  const vehicle = trip ? vehicleTypes.find((v) => v.id === trip.vehicle_type_id) : null;
 
   // Get driver ID from trip (or use mock)
-  const driverId = trip?.driverId || `DRV-${String(Math.floor(Math.random() * 100)).padStart(3, "0")}`;
+  const driverId = trip?.driver_id || `DRV-${String(Math.floor(Math.random() * 100)).padStart(3, "0")}`;
 
   // Real-time tracking hook
   const { location: realtimeLocation, isConnected, error: rtError } = useRealTimeTracking(driverId, {
@@ -97,8 +111,8 @@ export default function DriverTracking() {
       // Setup location listener for this driver and pickup
       const cleanup = notificationTriggerService.setupLocationListener(
         driverId,
-        pickup.lat || -6.2, // Use actual coordinates from pickup
-        pickup.lng || 106.8,
+        -6.2, // Default coordinates (pickup_points table has no lat/lng)
+        106.8,
         pickup.label
       );
 
@@ -127,7 +141,7 @@ export default function DriverTracking() {
   const progressPercent = Math.min(100, (estimatedPosition / pickupOrder) * 100);
 
   // Relevant stops: from start to user's pickup
-  const relevantStops = pickupPoints.filter((p) => p.order <= pickupOrder).sort((a, b) => a.order - b.order);
+  const relevantStops = (route?.pickup_points || []).filter((p) => p.sort_order <= pickupOrder).sort((a, b) => a.sort_order - b.sort_order);
   // SVG path points for the simulated route
   const totalStops = relevantStops.length;
   const pathPoints = relevantStops.map((_, i) => {
@@ -336,8 +350,8 @@ export default function DriverTracking() {
               {/* Stop markers */}
               {pathPoints.map((pt, i) => {
                 const stop = relevantStops[i];
-                const isPassed = stop.order < estimatedPosition;
-                const isCurrent = stop.order === estimatedPosition;
+                const isPassed = stop.sort_order < estimatedPosition;
+                const isCurrent = stop.sort_order === estimatedPosition;
                 const isUserStop = stop.id === pickup?.id;
 
                 return (
@@ -479,8 +493,8 @@ export default function DriverTracking() {
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Route Stops</p>
             <div className="space-y-0">
               {relevantStops.map((stop, i) => {
-                const isPassed = stop.order < estimatedPosition;
-                const isCurrent = stop.order === estimatedPosition && !arrived;
+                const isPassed = stop.sort_order < estimatedPosition;
+                const isCurrent = stop.sort_order === estimatedPosition && !arrived;
                 const isUserStop = stop.id === pickup?.id;
                 const isLast = i === relevantStops.length - 1;
 

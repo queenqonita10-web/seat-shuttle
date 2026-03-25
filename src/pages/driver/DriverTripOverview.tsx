@@ -317,7 +317,7 @@ const DriverTripOverview = () => {
                         </span>
                       )}
                       <span className="text-xs font-black opacity-40 uppercase tracking-widest">
-                        +{stop.timeOffset + (isCurrent ? Math.round(scheduleDeviation) : 0)}m
+                        +{stop.time_offset + (isCurrent ? Math.round(scheduleDeviation) : 0)}m
                       </span>
                     </div>
                   </div>
