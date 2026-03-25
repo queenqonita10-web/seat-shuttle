@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { TrackingService } from "@/services/trackingService";
+import { realtimeTrackingService } from "@/services/realtimeTrackingService";
 import { supabase } from "@/integrations/supabase/client";
 
 // DB-compatible types
@@ -164,6 +165,14 @@ export function DriverProvider({ children }: { children: ReactNode }) {
   const setActiveTrip = async (trip: DriverTrip | null) => {
     setActiveTripState(trip);
     if (trip) {
+      // === WebSocket Real-time Setup ===
+      // Initialize real-time tracking service on trip start
+      await realtimeTrackingService.initialize();
+      
+      // Set active trip context for validation enforcement
+      const driver_id = trip.driver_id || "driver-unknown";
+      TrackingService.setActiveTripContext(driver_id, trip.id, "in_progress");
+      
       // Fetch bookings from DB
       const { data } = await supabase
         .from("bookings")
@@ -179,9 +188,22 @@ export function DriverProvider({ children }: { children: ReactNode }) {
       setLocationVerified(false);
       setScheduleDeviation(0);
       playFeedback("success");
+      
+      console.info(`[DriverContext] Started trip ${trip.id} with real-time tracking`);
     } else {
+      // === WebSocket Cleanup ===
+      // Clear trip context when trip ends
+      if (activeTrip?.driver_id) {
+        TrackingService.clearActiveTripContext(activeTrip.driver_id);
+      }
+      
+      // Optionally cleanup real-time service
+      // realtimeTrackingService.destroy();
+      
       setBookings([]);
       setCurrentStopIndex(0);
+      
+      console.info(`[DriverContext] Ended trip context`);
     }
   };
 
@@ -216,14 +238,28 @@ export function DriverProvider({ children }: { children: ReactNode }) {
     setCurrentLocation({ lat, lng, lastUpdate: timestamp });
     if (activeTrip) {
       try {
-        await TrackingService.updateDriverLocation({
-          driver_id: activeTrip.driver_id || "driver-unknown",
+        const driver_id = activeTrip.driver_id || "driver-unknown";
+        
+        // Update tracking service (validated + cached)
+        await TrackingService.updateDriverLocation(
+          { driver_id, lat, lng, timestamp },
+          true // enforceActiveTripContext - will only accept if trip is active
+        );
+
+        // === WebSocket Broadcast ===
+        // Broadcast location update in real-time to all subscribers
+        realtimeTrackingService.broadcastUpdate({
+          driver_id,
           lat,
           lng,
           timestamp,
+          speed: 0, // Could calculate from position deltas
+          heading: 0, // Could track from previous position
+          trip_id: activeTrip.id,
         });
+        
       } catch (error) {
-        console.error("[Tracking Error]", error);
+        console.error("[DriverContext] Location update error:", error);
       }
     }
   };
@@ -232,6 +268,11 @@ export function DriverProvider({ children }: { children: ReactNode }) {
   const prevStop = () => { setCurrentStopIndex((prev) => Math.max(0, prev - 1)); playFeedback("action"); };
 
   const reset = () => {
+    // === WebSocket Cleanup ===
+    if (activeTrip?.driver_id) {
+      TrackingService.clearActiveTripContext(activeTrip.driver_id);
+    }
+    
     setActiveTripState(null);
     setCurrentStopIndex(0);
     setBookings([]);
@@ -243,6 +284,8 @@ export function DriverProvider({ children }: { children: ReactNode }) {
     setLocationVerified(false);
     setScheduleDeviation(0);
     playFeedback("action");
+    
+    console.info('[DriverContext] Reset - cleared trip context');
   };
 
   return (

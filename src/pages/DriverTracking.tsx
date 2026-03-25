@@ -6,8 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Bus, MapPin, Phone, Share2, Star, Check, User } from "lucide-react";
+import { ArrowLeft, Bus, MapPin, Phone, Share2, Star, Check, User, Wifi, WifiOff, AlertCircle } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
+import { useRealTimeTracking } from "@/hooks/useRealTimeTracking";
+import { realtimeTrackingService } from "@/services/realtimeTrackingService";
 
 export default function DriverTracking() {
   const navigate = useNavigate();
@@ -18,39 +20,75 @@ export default function DriverTracking() {
   const trip = booking ? trips.find((t) => t.id === booking.tripId) : null;
   const vehicle = trip ? getVehicleType(trip.vehicleTypeId) : null;
 
+  // Get driver ID from trip (or use mock)
+  const driverId = trip?.driverId || `DRV-${String(Math.floor(Math.random() * 100)).padStart(3, "0")}`;
+
+  // Real-time tracking hook
+  const { location: realtimeLocation, isConnected, error: rtError } = useRealTimeTracking(driverId, {
+    autoSubscribe: true,
+    onError: (error) => console.error("[DriverTracking] Tracking error:", error),
+  });
+
+  // Local state for position simulation / fallback
   const [driverPosition, setDriverPosition] = useState(1);
   const [eta, setEta] = useState(15);
   const [seconds, setSeconds] = useState(0);
+  const [showMockWarning, setShowMockWarning] = useState(!isConnected);
 
-  // Relevant stops: from start to user's pickup
-  const relevantStops = pickupPoints.filter((p) => p.order <= pickupOrder).sort((a, b) => a.order - b.order);
+  // Calculate approximate position from real location (fallback to simulated)
+  const estimatedPosition = realtimeLocation?.lat && realtimeLocation?.lng 
+    ? Math.min(pickupOrder, Math.floor(driverPosition * 1.2)) // Estimated based on bearing
+    : driverPosition;
 
+  // Use fallback simulation if no real-time data
   useEffect(() => {
-    const interval = setInterval(() => {
-      setDriverPosition((prev) => {
-        if (prev >= pickupOrder) {
-          clearInterval(interval);
-          return prev;
-        }
-        return prev + 1;
-      });
-      setEta((prev) => Math.max(0, prev - 3));
-    }, 4000);
-    return () => clearInterval(interval);
-  }, [pickupOrder]);
+    if (realtimeLocation) {
+      // Real location received - update warning status
+      setShowMockWarning(false);
+    } else {
+      // No real location - run simulation as fallback
+      const interval = setInterval(() => {
+        setDriverPosition((prev) => {
+          if (prev >= pickupOrder) {
+            clearInterval(interval);
+            return prev;
+          }
+          return prev + 1;
+        });
+        setEta((prev) => Math.max(0, prev - 3));
+      }, 4000);
+      return () => clearInterval(interval);
+    }
+  }, [realtimeLocation, pickupOrder]);
 
   // Countdown seconds ticker
   useEffect(() => {
-    if (driverPosition >= pickupOrder) return;
+    if (estimatedPosition >= pickupOrder) return;
     const timer = setInterval(() => {
       setSeconds((prev) => (prev === 0 ? 59 : prev - 1));
     }, 1000);
     return () => clearInterval(timer);
-  }, [driverPosition, pickupOrder]);
+  }, [estimatedPosition, pickupOrder]);
 
-  const arrived = driverPosition >= pickupOrder;
-  const progressPercent = Math.min(100, (driverPosition / pickupOrder) * 100);
+  // Initialize realtime service on mount
+  useEffect(() => {
+    if (booking && trip) {
+      realtimeTrackingService.initialize().catch((error) => {
+        console.error("[DriverTracking] Failed to initialize realtime service:", error);
+      });
+    }
 
+    // Cleanup on unmount
+    return () => {
+      // Don't destroy service here, it's singleton
+    };
+  }, [booking, trip]);
+
+  const arrived = estimatedPosition >= pickupOrder;
+  const progressPercent = Math.min(100, (estimatedPosition / pickupOrder) * 100);
+
+  // Relevant stops: from start to user's pickup
+  const relevantStops = pickupPoints.filter((p) => p.order <= pickupOrder).sort((a, b) => a.order - b.order);
   // SVG path points for the simulated route
   const totalStops = relevantStops.length;
   const pathPoints = relevantStops.map((_, i) => {
@@ -106,14 +144,56 @@ export default function DriverTracking() {
           </button>
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-bold">PYU-GO Tracking</h1>
-            <Badge className="bg-destructive/90 text-destructive-foreground text-[10px] animate-pulse">
-              ● LIVE
-            </Badge>
+            <div className="flex items-center gap-2">
+              {/* Connection status */}
+              <div className="flex items-center gap-1 text-xs">
+                {isConnected ? (
+                  <>
+                    <Wifi size={14} className="text-secondary animate-pulse" />
+                    <span className="hidden sm:inline text-primary-foreground/80">Live</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff size={14} className="text-destructive/70" />
+                    <span className="hidden sm:inline text-primary-foreground/80">Polling</span>
+                  </>
+                )}
+              </div>
+              <Badge className="bg-destructive/90 text-destructive-foreground text-[10px] animate-pulse">
+                ● LIVE
+              </Badge>
+            </div>
           </div>
         </div>
       </div>
 
       <div className="mx-auto max-w-md px-5 mt-4 space-y-4">
+        {/* Real-time tracking error/warning */}
+        {showMockWarning && (
+          <Card className="border-destructive/30 bg-destructive/5 shadow-sm">
+            <CardContent className="p-3 flex gap-3">
+              <AlertCircle className="h-5 w-5 text-destructive/70 shrink-0 mt-0.5" />
+              <div className="text-sm text-destructive/80">
+                <p className="font-medium">Using simulated tracking</p>
+                <p className="text-xs opacity-80 mt-0.5">Real-time data unavailable. Showing estimated position.</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Real location coordinates (debug info) */}
+        {realtimeLocation && (
+          <Card className="border-primary/20 bg-primary/5 shadow-sm">
+            <CardContent className="p-3 text-xs text-primary/70 font-mono">
+              <div className="flex justify-between">
+                <span>Lat: {realtimeLocation.lat.toFixed(4)}</span>
+                <span>Lng: {realtimeLocation.lng.toFixed(4)}</span>
+              </div>
+              {realtimeLocation.speed && <div>Speed: {realtimeLocation.speed.toFixed(1)} km/h</div>}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Simulated Map */}
         <Card className="border-0 shadow-sm overflow-hidden">
           <div className="h-48 bg-muted relative">
@@ -135,10 +215,10 @@ export default function DriverTracking() {
                 <path d={pathD} fill="none" stroke="hsl(var(--border))" strokeWidth="3" strokeLinecap="round" />
               )}
               {/* Traveled portion */}
-              {pathD && driverPosition > 0 && (
+              {pathD && estimatedPosition > 0 && (
                 <path
                   d={`M ${pathPoints
-                    .slice(0, driverPosition)
+                    .slice(0, estimatedPosition)
                     .map((p) => `${p.x},${p.y}`)
                     .join(" L ")}`}
                   fill="none"
@@ -151,8 +231,8 @@ export default function DriverTracking() {
               {/* Stop markers */}
               {pathPoints.map((pt, i) => {
                 const stop = relevantStops[i];
-                const isPassed = stop.order < driverPosition;
-                const isCurrent = stop.order === driverPosition;
+                const isPassed = stop.order < estimatedPosition;
+                const isCurrent = stop.order === estimatedPosition;
                 const isUserStop = stop.id === pickup?.id;
 
                 return (
@@ -294,8 +374,8 @@ export default function DriverTracking() {
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Route Stops</p>
             <div className="space-y-0">
               {relevantStops.map((stop, i) => {
-                const isPassed = stop.order < driverPosition;
-                const isCurrent = stop.order === driverPosition && !arrived;
+                const isPassed = stop.order < estimatedPosition;
+                const isCurrent = stop.order === estimatedPosition && !arrived;
                 const isUserStop = stop.id === pickup?.id;
                 const isLast = i === relevantStops.length - 1;
 
