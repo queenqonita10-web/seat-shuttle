@@ -5,20 +5,61 @@ import { formatPrice, getPickupTime } from "@/lib/formatters";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Armchair, Clock, CheckCircle, QrCode, Navigation, User, Phone } from "lucide-react";
+import { MapPin, Armchair, Clock, CheckCircle, QrCode, Navigation, User, Phone, Download, Share2 } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { QRCodeSVG } from "qrcode.react";
 
 export default function ETicket() {
   const navigate = useNavigate();
   const { booking, selectedTrip, pickupPoint } = useBooking();
   const { data: routes = [] } = useRoutes();
+  const qrRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!booking) {
       navigate("/", { replace: true });
     }
   }, [booking, navigate]);
+
+  const handleDownloadQR = () => {
+    if (qrRef.current) {
+      const svg = qrRef.current.querySelector("svg");
+      if (svg) {
+        // Convert SVG to PNG
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const svgData = new XMLSerializer().serializeToString(svg);
+        const img = new Image();
+        
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx?.drawImage(img, 0, 0);
+          
+          const link = document.createElement("a");
+          link.href = canvas.toDataURL("image/png");
+          link.download = `ticket-${booking?.id}.png`;
+          link.click();
+        };
+        
+        img.src = "data:image/svg+xml;base64," + btoa(svgData);
+      }
+    }
+  };
+
+  const handleShare = async () => {
+    const shareText = `Check my PYU-GO ticket!\nBooking: ${booking?.id}\nTrip: ${selectedTrip?.id}\nSeat: ${booking?.seatNumber}`;
+    if (navigator.share) {
+      await navigator.share({
+        title: "PYU-GO Ticket",
+        text: shareText,
+      });
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(shareText);
+    }
+  };
 
   if (!booking) return null;
 
@@ -28,6 +69,15 @@ export default function ETicket() {
     ? getPickupTime(selectedTrip.departure_time, routePickup)
     : "";
   const fare = booking.fare ?? routePickup?.fare ?? 0;
+
+  // Generate QR data: contains ticket ID, booking ID, and seat info for verification
+  const qrData = JSON.stringify({
+    ticketId: booking.id,
+    bookingId: booking.id,
+    seat: booking.seatNumber,
+    trip: selectedTrip?.id,
+    timestamp: new Date().toISOString(),
+  });
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -49,9 +99,13 @@ export default function ETicket() {
           </div>
 
           <CardContent className="p-5 space-y-4">
-            <div className="mx-auto h-40 w-40 rounded-xl bg-foreground/5 border-2 border-dashed border-border flex flex-col items-center justify-center gap-2">
-              <QrCode size={48} className="text-muted-foreground" />
-              <span className="text-[10px] text-muted-foreground">Scan at boarding</span>
+            <div ref={qrRef} className="mx-auto h-40 w-40 rounded-xl bg-white border-2 border-dashed border-border flex flex-col items-center justify-center gap-2 p-2">
+              <QRCodeSVG
+                value={qrData}
+                size={128}
+                level="H"
+                includeMargin={true}
+              />
             </div>
 
             <div className="space-y-3 pt-2">
@@ -114,6 +168,14 @@ export default function ETicket() {
           <Button onClick={() => navigate("/track")} className="w-full h-11 font-semibold">
             Track Driver
           </Button>
+          <div className="flex gap-2">
+            <Button onClick={handleDownloadQR} variant="outline" className="flex-1 h-11">
+              <Download size={16} className="mr-2" /> Download
+            </Button>
+            <Button onClick={handleShare} variant="outline" className="flex-1 h-11">
+              <Share2 size={16} className="mr-2" /> Share
+            </Button>
+          </div>
           <Button onClick={() => navigate("/")} variant="outline" className="w-full h-11">
             Back to Home
           </Button>
