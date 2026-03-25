@@ -1,48 +1,32 @@
+# Implementasi Backend Production-Ready — PYU-GO
 
+## Status: Fase 1 ✅ Selesai
 
-# Review: ETicket, DriverTracking, SeatSelection, DriverTripOverview
+### Fase 1: Setup Supabase + Database Schema + Auth Foundation ✅
+- [x] Lovable Cloud diaktifkan (Supabase otomatis)
+- [x] 14 tabel dibuat: user_roles, profiles, routes, pickup_points, vehicle_types, seat_layout_templates, vehicles, drivers, trips, seats, bookings, tickets, driver_locations, audit_logs
+- [x] Enum `app_role` (admin, driver)
+- [x] Function `has_role()` (SECURITY DEFINER)
+- [x] Trigger auto-create profile on signup
+- [x] RLS policies untuk semua tabel
+- [x] Realtime enabled untuk driver_locations
+- [x] Indexes untuk performa
+- [x] Auth page (Login/Register/Forgot Password)
+- [x] Reset Password page
+- [x] ProtectedRoute component (role-based)
+- [x] useAuth hook dengan AuthProvider
+- [x] App.tsx updated: admin routes dilindungi (admin), driver routes dilindungi (driver)
 
-## Temuan
+### Fase 2: Data Layer — Replace Mock Data (Belum)
+- [ ] Seed data ke database
+- [ ] Custom hooks (useRoutes, useTrips, useBookings, dll)
+- [ ] Update semua 25+ pages
 
-### 1. `DriverTripOverview.tsx` (536 baris) — Terlalu besar & UI berlebihan
-- **Tombol ARRIVED `h-24` (96px)** terlalu besar, memakan ruang layar
-- **`rounded-[3rem]`** berlebihan di dialog dan map container
-- **`text-3xl`** untuk tombol, `text-2xl` untuk label — terlalu besar di mobile 375px
-- **Grid `grid-cols-3`** di dialog verifikasi lokasi — terlalu sempit di mobile
-- **Floating events `fixed top-80`** bisa overlap dengan header sticky
-- **Bottom bar `pb-40`** terlalu besar
+### Fase 3: Driver Module Backend (Belum)
+- [ ] Driver location tracking realtime
+- [ ] Driver operations persist ke DB
 
-### 2. Route duplikat `/tracking` dan `/track`
-- Kedua route mengarah ke `DriverTracking` — sebaiknya hapus salah satu atau redirect
-
-### 3. `ETicket.tsx` — Minor
-- Sudah baik. Satu masalah: jika booking hilang (refresh), langsung redirect tanpa feedback
-
-### 4. `SeatSelection.tsx` — OK
-- Layout sudah mobile-first, bottom bar sesuai alur booking
-
-### 5. `DriverTracking.tsx` — OK
-- Fallback state ada, BottomNav ada, layout konsisten
-
-## Rencana Perbaikan
-
-### 1. Refactor `DriverTripOverview.tsx` — Mobile optimization
-- Tombol ARRIVED: `h-24` → `h-16`, `text-3xl` → `text-xl`
-- Dialog verifikasi: `rounded-[3rem]` → `rounded-2xl`, `grid-cols-3` → layout lebih mobile-friendly
-- Map container: `rounded-[3rem]` → `rounded-2xl`, `h-[500px]` → `h-[360px]`
-- Bottom bar padding: `pb-40` → `pb-28`, `p-6` → `p-4`
-- Floating events: `fixed top-80` → `sticky` atau `absolute` dalam container
-- Kurangi ukuran font heading dari `text-3xl` → `text-xl`, progress counter `text-4xl` → `text-2xl`
-
-### 2. Hapus route duplikat `/tracking`
-- Hapus route `/tracking` di `App.tsx`, pertahankan `/track` saja
-- Pastikan semua navigasi mengarah ke `/track`
-
-### 3. `ETicket.tsx` — Perbaikan minor
-- Gunakan `useEffect` untuk redirect (bukan render-time navigate) agar tidak error React
-
-## File yang Diubah
-- `src/pages/driver/DriverTripOverview.tsx` — mobile UI optimization
-- `src/App.tsx` — hapus route duplikat `/tracking`
-- `src/pages/ETicket.tsx` — fix redirect pattern
-
+### Fase 4: Admin Module + Edge Functions (Belum)
+- [ ] Admin CRUD operations
+- [ ] Edge functions (create-booking, cancel-booking)
+- [ ] Analytics dari real data
