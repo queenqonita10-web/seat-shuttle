@@ -1,0 +1,214 @@
+import { useNavigate } from "react-router-dom";
+import { useDriver } from "@/context/DriverContext";
+import { routes } from "@/data/mockData";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ArrowLeft, CheckCircle2, QrCode, UserMinus, UserCheck, XCircle, Navigation } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/components/ui/use-toast";
+import { VoiceCommandLayer } from "@/components/VoiceCommandLayer";
+
+const DriverPickupDetail = () => {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { activeTrip, currentStopIndex, bookings, updateBookingStatus, nextStop, isDrivingMode, playFeedback } = useDriver();
+
+  if (!activeTrip) {
+    navigate("/driver");
+    return null;
+  }
+
+  const route = routes.find((r) => r.id === activeTrip.routeId);
+  const currentStop = route?.pickupPoints[currentStopIndex];
+  const stopBookings = bookings.filter((b) => b.pickupPointId === currentStop?.id);
+
+  if (!currentStop) {
+    navigate("/driver/summary");
+    return null;
+  }
+
+  const handleNextStop = () => {
+    nextStop();
+    navigate("/driver/trip");
+  };
+
+  const handlePickupAll = () => {
+    stopBookings.forEach(b => {
+      if (b.status === "pending") updateBookingStatus(b.id, "picked_up");
+    });
+    playFeedback("success");
+    toast({ title: "All Picked Up!", description: "All passengers at this stop have been checked in." });
+  };
+
+  const handleVoiceCommand = (command: string) => {
+    if (command === "pickup all") {
+      handlePickupAll();
+    } else if (command === "next stop") {
+      if (allProcessed) handleNextStop();
+    }
+  };
+
+  const allProcessed = stopBookings.every(b => b.status !== "pending");
+
+  return (
+    <div className={cn(
+      "min-h-screen pb-32 transition-colors duration-500",
+      isDrivingMode ? "bg-black text-white" : "bg-background text-foreground"
+    )}>
+      {/* High Contrast Header */}
+      <div className={cn(
+        "px-6 pb-8 pt-16 sticky top-0 z-20 shadow-2xl transition-colors duration-500",
+        isDrivingMode ? "bg-zinc-900 border-b border-white/10" : "bg-primary text-primary-foreground"
+      )}>
+        <div className="mx-auto max-w-md">
+          <button
+            onClick={() => navigate("/driver/trip")}
+            className="mb-4 flex items-center gap-2 text-sm font-black uppercase tracking-widest opacity-70"
+          >
+            <ArrowLeft size={20} strokeWidth={3} />
+            Back to Map
+          </button>
+          <div className="flex justify-between items-end">
+            <div>
+              <p className="text-[10px] uppercase font-black tracking-[0.3em] opacity-50 mb-1">Current Pickup</p>
+              <h1 className="text-3xl font-black uppercase tracking-tighter leading-none">{currentStop.label}</h1>
+            </div>
+            <div className="text-right">
+              <p className="text-4xl font-black leading-none tracking-tighter">{stopBookings.filter(b => b.status === "pending").length}</p>
+              <p className="text-[10px] uppercase font-black tracking-[0.2em] opacity-50">REMAINING</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="mx-auto max-w-md px-6 mt-8 space-y-6">
+        {stopBookings.length === 0 ? (
+          <div className="text-center py-20 animate-in fade-in zoom-in">
+            <CheckCircle2 size={100} strokeWidth={1} className="mx-auto text-green-500 mb-6 opacity-20" />
+            <h3 className="text-3xl font-black uppercase tracking-tighter">Clear to Go</h3>
+            <p className="text-xl opacity-50 font-bold mt-2">No pickups scheduled here</p>
+          </div>
+        ) : (
+          stopBookings.map((booking) => (
+            <Card key={booking.id} className={cn(
+              "border-0 transition-all shadow-2xl rounded-[2.5rem] overflow-hidden transform active:scale-[0.98]",
+              booking.status === "picked_up" ? "bg-green-600/10 ring-4 ring-green-600" : 
+              booking.status === "no_show" ? "bg-red-600/5 opacity-40 grayscale" : 
+              isDrivingMode ? "bg-zinc-900 ring-1 ring-white/10" : "bg-white"
+            )}>
+              <CardContent className="p-8">
+                <div className="flex justify-between items-start mb-8">
+                  <div className="flex-grow">
+                    <h3 className="text-3xl font-black uppercase tracking-tight mb-1">{booking.passengerName}</h3>
+                    <p className="text-xl font-bold opacity-60 tracking-tight">{booking.passengerPhone}</p>
+                  </div>
+                  <Badge className={cn(
+                    "text-2xl px-5 py-2 font-black rounded-2xl shadow-xl",
+                    booking.status === "picked_up" ? "bg-green-600 text-white" : 
+                    booking.status === "no_show" ? "bg-red-600 text-white" : 
+                    isDrivingMode ? "bg-white text-black" : "bg-primary text-white"
+                  )}>
+                    #{booking.seatNumber}
+                  </Badge>
+                </div>
+
+                {booking.status === "pending" ? (
+                  <div className="grid grid-cols-2 gap-4">
+                    <Button 
+                      className="h-24 rounded-[1.5rem] bg-green-600 hover:bg-green-700 text-2xl font-black gap-3 shadow-xl shadow-green-600/20"
+                      onClick={() => updateBookingStatus(booking.id, "picked_up")}
+                    >
+                      <UserCheck size={32} strokeWidth={3} />
+                      PICKUP
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      className="h-24 rounded-[1.5rem] border-4 border-red-600 text-red-600 hover:bg-red-50 text-2xl font-black gap-3"
+                      onClick={() => updateBookingStatus(booking.id, "no_show")}
+                    >
+                      <UserMinus size={32} strokeWidth={3} />
+                      MISS
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-4 text-xl font-black uppercase tracking-widest">
+                    {booking.status === "picked_up" ? (
+                      <span className="text-green-600 flex items-center gap-2"><CheckCircle2 size={28} strokeWidth={3} /> BOARDED</span>
+                    ) : (
+                      <span className="text-red-600 flex items-center gap-2"><XCircle size={28} strokeWidth={3} /> NO SHOW</span>
+                    )}
+                    <Button 
+                      variant="ghost" 
+                      className="ml-auto text-muted-foreground font-black underline uppercase text-xs"
+                      onClick={() => updateBookingStatus(booking.id, "pending")}
+                    >
+                      Undo
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          ))
+        )}
+
+        {/* Predictive Suggestion: Pickup All */}
+        {!allProcessed && stopBookings.length > 1 && (
+          <Button 
+            variant="outline" 
+            className={cn(
+              "w-full h-20 rounded-[2rem] border-4 text-xl font-black gap-4 mt-4 transition-all active:bg-primary active:text-white",
+              isDrivingMode ? "border-white/20 text-white bg-white/5" : "border-primary text-primary"
+            )}
+            onClick={handlePickupAll}
+          >
+            <UserCheck size={24} strokeWidth={3} />
+            PICKUP ALL PASSENGERS
+          </Button>
+        )}
+
+        {/* Global QR Scan Button - Giant for Driving */}
+        <Button 
+          variant="outline" 
+          className={cn(
+            "w-full h-24 rounded-[2rem] border-4 text-2xl font-black gap-4 mt-4 transition-all shadow-2xl active:scale-95",
+            isDrivingMode ? "border-primary text-primary bg-primary/5" : "border-primary text-primary"
+          )}
+          onClick={() => navigate("/driver/scan")}
+        >
+          <QrCode size={32} strokeWidth={3} />
+          SCAN TICKET
+        </Button>
+      </div>
+
+      {/* Sticky Bottom Next Step Button - Progressive Disclosure */}
+      <div className={cn(
+        "fixed bottom-0 left-0 right-0 p-6 z-30 transition-all duration-500",
+        isDrivingMode ? "bg-black/90 backdrop-blur-xl border-t border-white/10" : "bg-white/90 backdrop-blur-md border-t"
+      )}>
+        <div className="mx-auto max-w-md">
+          <Button
+            className={cn(
+              "w-full h-24 text-3xl font-black rounded-[2rem] shadow-2xl transition-all duration-500",
+              allProcessed ? "bg-primary text-white shadow-primary/40 active:translate-y-1" : "bg-zinc-800 text-white/20 cursor-not-allowed"
+            )}
+            onClick={handleNextStop}
+            disabled={!allProcessed && stopBookings.length > 0}
+          >
+            {allProcessed ? "CONTINUE TRIP" : "PROCESS ALL"}
+            <Navigation size={32} fill="currentColor" className="rotate-90 ml-2" />
+          </Button>
+          {!allProcessed && stopBookings.length > 0 && (
+            <p className="text-center text-[10px] font-black mt-4 uppercase tracking-[0.4em] opacity-40">
+              Complete pickups to proceed
+            </p>
+          )}
+        </div>
+      </div>
+
+      <VoiceCommandLayer onCommand={handleVoiceCommand} />
+    </div>
+  );
+};
+
+export default DriverPickupDetail;

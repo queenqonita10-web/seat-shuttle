@@ -94,6 +94,10 @@ export default {
           "0%, 100%": { opacity: "1", transform: "scale(1)" },
           "50%": { opacity: "0.5", transform: "scale(1.5)" },
         },
+        scan: {
+          "0%": { top: "0%" },
+          "100%": { top: "100%" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -101,6 +105,7 @@ export default {
         "seat-pop": "seat-pop 0.25s ease-out",
         "fade-up": "fade-up 0.4s ease-out",
         "pulse-dot": "pulse-dot 1.5s ease-in-out infinite",
+        scan: "scan 2s linear infinite",
       },
     },
   },

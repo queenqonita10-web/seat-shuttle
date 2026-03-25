@@ -45,6 +45,7 @@ export interface Booking {
   passengerPhone: string;
   paymentMethod: string;
   paymentStatus: "pending" | "paid";
+  status: "pending" | "picked_up" | "no_show";
   createdAt: string;
 }
 
@@ -269,12 +270,21 @@ export const mockBookings: Booking[] = Array.from({ length: 15 }, (_, i) => {
     passengerPhone: `08${String(1200000000 + i * 11111111).slice(0, 10)}`,
     paymentMethod: i % 3 === 0 ? "Cash" : i % 3 === 1 ? "Transfer" : "QRIS",
     paymentStatus: i % 4 === 0 ? "pending" : "paid",
+    status: "pending",
     createdAt: date.toISOString(),
   };
 });
 
 export function getAllBookings(): Booking[] {
   return mockBookings;
+}
+
+export function getBookingsForTrip(tripId: string): Booking[] {
+  return mockBookings.filter((b) => b.tripId === tripId);
+}
+
+export function getBookingsForStop(tripId: string, pickupPointId: string): Booking[] {
+  return mockBookings.filter((b) => b.tripId === tripId && b.pickupPointId === pickupPointId);
 }
 
 export function getRevenueByRoute(): { route: string; revenue: number }[] {
