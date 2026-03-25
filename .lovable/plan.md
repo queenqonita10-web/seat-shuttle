@@ -1,46 +1,48 @@
 
 
-# Optimasi Tampilan Mobile untuk Semua Halaman User
+# Review & Refinement Seluruh Aplikasi PYU-GO
 
-## Masalah
-Beberapa halaman user (Tickets, Profile, TicketDetail) menggunakan layout desktop-oriented dengan `max-w-4xl`, grid multi-kolom, padding besar, dan rounded corners berlebihan. Halaman lain (Index, SearchResults, Checkout, SeatSelection, ETicket) sudah mobile-first dengan `max-w-md`.
+## Temuan Masalah
 
-## Perubahan
+### 1. Halaman tanpa BottomNav
+Halaman `SearchResults`, `SeatSelection`, `PickupRoute`, `Checkout`, dan `ETicket` tidak memiliki `BottomNav`. Ini membuat navigasi inkonsisten -- pengguna tidak bisa langsung ke Home/Tickets/Track/Profile dari halaman-halaman tersebut.
 
-### 1. `Tickets.tsx` — Redesign mobile-first
-- Ganti `max-w-4xl` → `max-w-md`, kurangi header padding (`pb-32` → `pb-8`)
-- Ticket cards: kurangi `rounded-[2.5rem]` → `rounded-xl`, `p-8` → `p-4`
-- Info grid: `grid-cols-2` saja (hapus `md:grid-cols-4`)
-- Hapus right-side chevron panel (desktop-only element)
-- Filter pills: ukuran lebih kecil, mobile-friendly
-- Tambahkan `BottomNav`
+### 2. DriverTracking tanpa booking = halaman kosong
+Jika user mengakses `/track` tanpa booking aktif (misal dari BottomNav), halaman menampilkan konten kosong tanpa fallback karena `pickup` dan `trip` bernilai null.
 
-### 2. `Profile.tsx` — Redesign mobile-first
-- Ganti `max-w-4xl` → `max-w-md`
-- Hapus `md:grid-cols-3` sidebar layout → single column stack
-- Pindahkan settings nav ke horizontal pills atau accordion di bawah profile info
-- Kurangi avatar size `h-32 w-32` → `h-20 w-20`
-- Form inputs: single column, kurangi padding
-- Tambahkan `BottomNav`
+### 3. Bottom bar tertutup BottomNav
+Di `SeatSelection` dan `PickupRoute`, fixed bottom bar (tombol Continue/Checkout) akan tertindih BottomNav jika ditambahkan. Perlu penyesuaian posisi.
 
-### 3. `TicketDetail.tsx` — Pastikan mobile-friendly
-- Ganti `max-w-4xl` → `max-w-md` jika ada
-- Pastikan single column layout
-- Tambahkan `BottomNav` jika belum ada
+### 4. Padding bawah tidak konsisten
+`DriverTracking` menggunakan `pb-6` padahal ada BottomNav (butuh `pb-20`). Beberapa halaman lain juga perlu disesuaikan.
 
-### 4. `DriverTracking.tsx` — Tambah BottomNav
-- Pastikan ada `BottomNav` dan layout konsisten `max-w-md`
+### 5. SearchResults tidak ada BottomNav & back button di header
+Alur linear (search → seat → route → checkout → eticket) tidak perlu BottomNav, tapi perlu konsistensi. Sebaiknya halaman-halaman alur booking tetap tanpa BottomNav (karena ada tombol Back), tapi ETicket sebagai halaman akhir perlu BottomNav.
 
-## Prinsip Desain
-- Semua halaman user: `max-w-md mx-auto`, padding `px-4` atau `px-5`
-- `BottomNav` di semua halaman user (dengan `pb-20` untuk spacing)
-- Card corners: `rounded-xl` atau `rounded-lg` (bukan `rounded-[2.5rem]`)
-- Font sizes dan padding sesuai layar 375px-414px
-- Single column layout, tidak ada grid multi-kolom
+### 6. ETicket: tombol "Track Driver" navigasi ke `/tracking` bukan `/track`
+Inkonsisten dengan BottomNav yang mengarah ke `/track`.
+
+## Rencana Perbaikan
+
+### 1. Tambah fallback state di `DriverTracking.tsx`
+- Jika tidak ada booking aktif, tampilkan pesan "Belum ada perjalanan aktif" dengan tombol ke Home
+- Ubah `pb-6` → `pb-20` agar konten tidak tertutup BottomNav
+
+### 2. Tambah BottomNav di `ETicket.tsx`
+- Tambah `BottomNav` dan `pb-20` karena ini halaman akhir alur booking, user perlu navigasi ke halaman lain
+
+### 3. Fix link di `ETicket.tsx`
+- Ubah navigasi "Track Driver" dari `/tracking` ke `/track` agar konsisten
+
+### 4. Halaman alur booking (SearchResults, SeatSelection, PickupRoute, Checkout) tetap tanpa BottomNav
+- Ini halaman linear dengan tombol Back, BottomNav akan mengganggu alur
+
+### 5. Minor UI polish
+- Profile: tab Security/Notif/Payment belum ada kontennya -- tambahkan placeholder sederhana
+- DriverTracking: `pb-6` → `pb-20`
 
 ## File yang Diubah
-- `src/pages/Tickets.tsx`
-- `src/pages/Profile.tsx`
-- `src/pages/TicketDetail.tsx`
-- `src/pages/DriverTracking.tsx`
+- `src/pages/DriverTracking.tsx` — fallback state + fix padding
+- `src/pages/ETicket.tsx` — tambah BottomNav + fix link `/track`
+- `src/pages/Profile.tsx` — placeholder untuk tab yang belum ada konten
 
