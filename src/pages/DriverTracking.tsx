@@ -37,7 +37,7 @@ export default function DriverTracking() {
   const vehicle = trip ? vehicleTypes.find((v) => v.id === trip.vehicle_type_id) : null;
 
   // Get driver ID from trip (or use mock)
-  const driverId = trip?.driverId || `DRV-${String(Math.floor(Math.random() * 100)).padStart(3, "0")}`;
+  const driverId = trip?.driver_id || `DRV-${String(Math.floor(Math.random() * 100)).padStart(3, "0")}`;
 
   // Real-time tracking hook
   const { location: realtimeLocation, isConnected, error: rtError } = useRealTimeTracking(driverId, {
@@ -350,8 +350,8 @@ export default function DriverTracking() {
               {/* Stop markers */}
               {pathPoints.map((pt, i) => {
                 const stop = relevantStops[i];
-                const isPassed = stop.order < estimatedPosition;
-                const isCurrent = stop.order === estimatedPosition;
+                const isPassed = stop.sort_order < estimatedPosition;
+                const isCurrent = stop.sort_order === estimatedPosition;
                 const isUserStop = stop.id === pickup?.id;
 
                 return (
@@ -493,8 +493,8 @@ export default function DriverTracking() {
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Route Stops</p>
             <div className="space-y-0">
               {relevantStops.map((stop, i) => {
-                const isPassed = stop.order < estimatedPosition;
-                const isCurrent = stop.order === estimatedPosition && !arrived;
+                const isPassed = stop.sort_order < estimatedPosition;
+                const isCurrent = stop.sort_order === estimatedPosition && !arrived;
                 const isUserStop = stop.id === pickup?.id;
                 const isLast = i === relevantStops.length - 1;
 
