@@ -301,6 +301,7 @@ export const vehicleTypes: VehicleType[] = [
   {
     id: "minibus-3",
     name: "Mini Bus / SUV",
+    capacity: 3,
     layout: [
       ["seat", "driver"],
       ["seat", "seat"],
@@ -310,6 +311,7 @@ export const vehicleTypes: VehicleType[] = [
   {
     id: "minibus-5",
     name: "Mini Bus / SUV (Roof Rack)",
+    capacity: 5,
     layout: [
       ["seat", "driver"],
       ["seat", "seat"],
@@ -320,6 +322,7 @@ export const vehicleTypes: VehicleType[] = [
   {
     id: "hiace-10",
     name: "HI ACE",
+    capacity: 10,
     layout: [
       ["seat", "empty", "driver"],
       ["seat", "seat", "seat"],
