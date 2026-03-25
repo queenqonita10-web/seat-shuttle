@@ -6,10 +6,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Bus, MapPin, Phone, Share2, Star, Check, User, Wifi, WifiOff, AlertCircle } from "lucide-react";
+import { ArrowLeft, Bus, MapPin, Phone, Share2, Star, Check, User, Wifi, WifiOff, AlertCircle, Bell, X } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
 import { useRealTimeTracking } from "@/hooks/useRealTimeTracking";
+import { useNotifications } from "@/hooks/useNotifications";
 import { realtimeTrackingService } from "@/services/realtimeTrackingService";
+import { notificationTriggerService } from "@/services/notificationTriggerService";
 
 export default function DriverTracking() {
   const navigate = useNavigate();
@@ -28,6 +30,10 @@ export default function DriverTracking() {
     autoSubscribe: true,
     onError: (error) => console.error("[DriverTracking] Tracking error:", error),
   });
+
+  // Notifications hook
+  const { notifications, unreadCount, markAsRead, unreadNotifications } = useNotifications();
+  const [showNotificationCenter, setShowNotificationCenter] = useState(false);
 
   // Local state for position simulation / fallback
   const [driverPosition, setDriverPosition] = useState(1);
@@ -70,19 +76,52 @@ export default function DriverTracking() {
     return () => clearInterval(timer);
   }, [estimatedPosition, pickupOrder]);
 
-  // Initialize realtime service on mount
+  // Initialize realtime service and notification triggers on mount
   useEffect(() => {
-    if (booking && trip) {
-      realtimeTrackingService.initialize().catch((error) => {
+    if (!booking || !trip || !pickup) return;
+
+    const setupTracking = async () => {
+      // Initialize realtime service
+      await realtimeTrackingService.initialize().catch((error) => {
         console.error("[DriverTracking] Failed to initialize realtime service:", error);
       });
-    }
+
+      // Initialize notification trigger service
+      await notificationTriggerService.initialize({
+        enabled: true,
+        nearbyDistance: 1000, // 1km
+        arrivedDistance: 100, // 100m
+        etaThreshold: 5, // 5 minutes
+      });
+
+      // Setup location listener for this driver and pickup
+      const cleanup = notificationTriggerService.setupLocationListener(
+        driverId,
+        pickup.lat || -6.2, // Use actual coordinates from pickup
+        pickup.lng || 106.8,
+        pickup.label
+      );
+
+      console.info("[DriverTracking] Notification triggers enabled for", driverId);
+
+      return cleanup;
+    };
+
+    let cleanup: (() => void) | null = null;
+
+    setupTracking()
+      .then((fn) => {
+        cleanup = fn;
+      })
+      .catch((error) => {
+        console.error("[DriverTracking] Tracking setup error:", error);
+      });
 
     // Cleanup on unmount
     return () => {
-      // Don't destroy service here, it's singleton
+      cleanup?.();
     };
-  }, [booking, trip]);
+  }, [booking, trip, pickup, driverId]);
 
   const arrived = estimatedPosition >= pickupOrder;
   const progressPercent = Math.min(100, (estimatedPosition / pickupOrder) * 100);
@@ -145,6 +184,19 @@ export default function DriverTracking() {
           <div className="flex items-center justify-between">
             <h1 className="text-lg font-bold">PYU-GO Tracking</h1>
             <div className="flex items-center gap-2">
+              {/* Notification center button */}
+              <button
+                onClick={() => setShowNotificationCenter(!showNotificationCenter)}
+                className="relative p-2 hover:bg-white/10 rounded-lg transition"
+              >
+                <Bell size={18} />
+                {unreadCount > 0 && (
+                  <span className="absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-destructive rounded-full">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </button>
+
               {/* Connection status */}
               <div className="flex items-center gap-1 text-xs">
                 {isConnected ? (
@@ -168,6 +220,59 @@ export default function DriverTracking() {
       </div>
 
       <div className="mx-auto max-w-md px-5 mt-4 space-y-4">
+        {/* Notification Center Drawer */}
+        {showNotificationCenter && (
+          <Card className="border-primary/30 bg-card shadow-lg fixed inset-x-0 top-0 z-50 max-w-md mx-auto rounded-b-lg rounded-t-none pt-[100px]">
+            <CardContent className="p-4 max-h-[calc(100vh-120px)] overflow-y-auto space-y-3">
+              <div className="flex items-center justify-between mb-4 sticky -top-4 bg-card pb-2">
+                <h3 className="font-semibold">Notifications ({notifications.length})</h3>
+                <button
+                  onClick={() => setShowNotificationCenter(false)}
+                  className="p-1 hover:bg-muted rounded"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              {notifications.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Bell size={32} className="mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No notifications yet</p>
+                </div>
+              ) : (
+                notifications.map((notif) => (
+                  <Card
+                    key={notif.id}
+                    className={`border-l-4 cursor-pointer transition ${
+                      notif.read
+                        ? 'border-l-border bg-muted/50'
+                        : 'border-l-primary bg-primary/5'
+                    }`}
+                    onClick={() => markAsRead(notif.id)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex justify-between items-start gap-2">
+                        <div className="flex-1">
+                          <p className="font-semibold text-sm">{notif.title}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {notif.body}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground mt-2">
+                            {new Date(notif.timestamp).toLocaleTimeString()}
+                          </p>
+                        </div>
+                        {!notif.read && (
+                          <div className="h-2 w-2 bg-primary rounded-full shrink-0 mt-1" />
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Real-time tracking error/warning */}
         {showMockWarning && (
           <Card className="border-destructive/30 bg-destructive/5 shadow-sm">
@@ -438,6 +543,28 @@ export default function DriverTracking() {
         <button className="w-full text-center text-sm text-destructive py-2">
           Cancel Ride
         </button>
+      </div>
+
+      {/* Floating Toast Notifications */}
+      <div className="fixed bottom-20 left-0 right-0 max-w-md mx-auto px-4 space-y-2 pointer-events-none">
+        {unreadNotifications.slice(-2).map((notif) => (
+          <Card key={notif.id} className="border-l-4 border-l-primary bg-primary/10 backdrop-blur shadow-lg pointer-events-auto animate-in fade-in slide-in-from-bottom-4">
+            <CardContent className="p-3">
+              <div className="flex justify-between items-start gap-2">
+                <div className="flex-1">
+                  <p className="font-semibold text-sm text-primary">{notif.title}</p>
+                  <p className="text-xs text-foreground/80 mt-1">{notif.body}</p>
+                </div>
+                <button
+                  onClick={() => markAsRead(notif.id)}
+                  className="p-1 hover:bg-primary/20 rounded shrink-0"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <BottomNav />

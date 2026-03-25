@@ -1,21 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "@/context/BookingContext";
 import { useRoutes } from "@/hooks/useRoutes";
 import { useCreateBooking } from "@/hooks/useBookings";
+import { usePayment } from "@/hooks/usePayment";
 import { formatPrice, getPickupTime } from "@/lib/formatters";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, CreditCard, Wallet, QrCode, MapPin, Armchair, Clock, DollarSign, AlertCircle, User, Phone } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, CreditCard, Wallet, QrCode, MapPin, Armchair, Clock, DollarSign, AlertCircle, User, Phone, Loader } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const paymentMethods = [
-  { id: "ewallet", label: "E-Wallet", icon: Wallet, description: "GoPay, OVO, Dana" },
-  { id: "bank", label: "Bank Transfer", icon: CreditCard, description: "BCA, Mandiri, BNI" },
-  { id: "qr", label: "QRIS", icon: QrCode, description: "Scan to pay" },
+  { id: "ewallet", label: "E-Wallet", icon: Wallet, description: "GoPay, OVO, Dana (via Midtrans)" },
+  { id: "credit_card", label: "Credit Card", icon: CreditCard, description: "Visa, Mastercard, Amex" },
+  { id: "bank_transfer", label: "Bank Transfer", icon: CreditCard, description: "BCA, Mandiri, BNI, CIMB" },
+  { id: "qris", label: "QRIS", icon: QrCode, description: "Scan to pay" },
 ];
 
 export default function Checkout() {
@@ -25,6 +28,56 @@ export default function Checkout() {
   const createBooking = useCreateBooking();
   const [selectedPayment, setSelectedPayment] = useState("");
   const [processing, setProcessing] = useState(false);
+
+  // Payment integration via Midtrans
+  const payment = usePayment({
+    bookingId: selectedTrip?.id || '',
+    tripId: selectedTrip?.id || '',
+    tripStartTime: selectedTrip?.departure_time || '',
+    passengerName,
+    passengerPhone,
+    seatNumber: selectedSeat || '',
+    pickupLabel: pickupPoint?.label || '',
+    fare: selectedTrip ? (routes.find(r => r.id === selectedTrip.route_id)?.pickup_points.find(p => p.id === pickupPoint?.id)?.fare || 0) : 0,
+    email: undefined,
+    onPaymentSuccess: async () => {
+      // Payment succeeded - create booking with paid status
+      try {
+        const result = await createBooking.mutateAsync({
+          tripId: selectedTrip!.id,
+          seatNumber: selectedSeat!,
+          pickupPointId: pickupPoint!.id,
+          passengerName: passengerName.trim(),
+          passengerPhone: passengerPhone.trim(),
+          paymentMethod: selectedPayment,
+          fare: selectedTrip ? (routes.find(r => r.id === selectedTrip.route_id)?.pickup_points.find(p => p.id === pickupPoint?.id)?.fare || 0) : 0,
+        });
+
+        setBooking({
+          id: result.bookingId,
+          tripId: selectedTrip!.id,
+          seatNumber: selectedSeat!,
+          pickupPointId: pickupPoint!.id,
+          passengerName: passengerName.trim(),
+          passengerPhone: passengerPhone.trim(),
+          paymentMethod: selectedPayment,
+          paymentStatus: "paid",
+          status: "pending",
+          fare: selectedTrip ? (routes.find(r => r.id === selectedTrip.route_id)?.pickup_points.find(p => p.id === pickupPoint?.id)?.fare || 0) : 0,
+          createdAt: new Date().toISOString(),
+        });
+
+        navigate("/eticket");
+      } catch (error) {
+        toast.error("Gagal membuat booking. Silakan coba lagi.");
+        console.error(error);
+      }
+    },
+    onPaymentError: (error) => {
+      toast.error(`Pembayaran gagal: ${error.message}`);
+      console.error('Payment error:', error);
+    },
+  });
 
   if (!selectedTrip || !selectedSeat || !pickupPoint) {
     navigate("/");
@@ -42,42 +95,28 @@ export default function Checkout() {
   const isPhoneValid = /^08\d{8,12}$/.test(passengerPhone.trim());
   const canPay = isNameValid && isPhoneValid && !!selectedPayment;
 
+  // Handle payment button click
   const handlePay = async () => {
     if (!canPay) return;
-    setProcessing(true);
-    
-    try {
-      const result = await createBooking.mutateAsync({
-        tripId: selectedTrip.id,
-        seatNumber: selectedSeat,
-        pickupPointId: pickupPoint.id,
-        passengerName: passengerName.trim(),
-        passengerPhone: passengerPhone.trim(),
-        paymentMethod: selectedPayment,
-        fare,
-      });
 
-      setBooking({
-        id: result.bookingId,
-        tripId: selectedTrip.id,
-        seatNumber: selectedSeat,
-        pickupPointId: pickupPoint.id,
-        passengerName: passengerName.trim(),
-        passengerPhone: passengerPhone.trim(),
-        paymentMethod: selectedPayment,
-        paymentStatus: "paid",
-        status: "pending",
-        fare,
-        createdAt: new Date().toISOString(),
-      });
-      navigate("/eticket");
+    setProcessing(true);
+    try {
+      // Generate Midtrans Snap token
+      await payment.generatePaymentToken();
     } catch (error) {
-      toast.error("Gagal membuat booking. Silakan coba lagi.");
+      toast.error("Gagal menghasilkan token pembayaran");
       console.error(error);
     } finally {
       setProcessing(false);
     }
   };
+
+  // Auto-process payment when token is available
+  useEffect(() => {
+    if (payment.snapToken && !payment.isProcessing) {
+      payment.processPayment();
+    }
+  }, [payment.snapToken]);
 
   return (
     <div className="min-h-screen bg-background pb-28">
@@ -97,6 +136,20 @@ export default function Checkout() {
             Be at <span className="font-bold">{pickupPoint.label}</span> by <span className="font-bold text-pyugo-warning">{pickupTime}</span>
           </p>
         </div>
+
+        {payment.error && (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>{payment.error.message}</AlertDescription>
+          </Alert>
+        )}
+
+        {payment.transactionStatus === 'processing' && (
+          <Alert>
+            <Loader className="h-4 w-4 animate-spin" />
+            <AlertDescription>Memproses pembayaran Anda...</AlertDescription>
+          </Alert>
+        )}
 
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-2">
@@ -177,8 +230,19 @@ export default function Checkout() {
             <p className="text-xs text-muted-foreground">Total</p>
             <p className="text-xl font-bold text-primary">{formatPrice(fare)}</p>
           </div>
-          <Button onClick={handlePay} disabled={!canPay || processing} className="px-8 h-11 font-semibold bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-            {processing ? "Processing..." : "Pay Now"}
+          <Button
+            onClick={handlePay}
+            disabled={!canPay || processing || payment.isLoading || payment.isProcessing}
+            className="px-8 h-11 font-semibold bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+          >
+            {payment.isLoading || payment.isProcessing ? (
+              <span className="flex items-center gap-2">
+                <Loader size={16} className="animate-spin" />
+                {payment.isProcessing ? "Processing..." : "Loading..."}
+              </span>
+            ) : (
+              "Pay Now"
+            )}
           </Button>
         </div>
       </div>
