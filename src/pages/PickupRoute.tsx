@@ -33,8 +33,8 @@ export default function PickupRoute() {
   const timelinePoints = route.pickup_points.map((p) => ({
     id: p.id,
     label: p.label,
-    order: p.sort_order,
-    timeOffset: p.time_offset,
+    sort_order: p.sort_order,
+    time_offset: p.time_offset,
     fare: p.fare,
   }));
 

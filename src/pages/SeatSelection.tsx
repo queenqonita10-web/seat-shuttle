@@ -38,9 +38,9 @@ export default function SeatSelection() {
   // Convert seats to the format SeatGrid expects
   const gridSeats = selectedTrip.seats.map((s) => ({
     id: s.id,
-    number: s.seat_number,
-    row: s.row_num,
-    col: s.col_num,
+    seat_number: s.seat_number,
+    row_num: s.row_num,
+    col_num: s.col_num,
     status: s.status as "available" | "booked",
   }));
 

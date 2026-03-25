@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "@/context/BookingContext";
-import { pickupPoints, getVehicleType, trips } from "@/data/mockData";
+import { useRoutes } from "@/hooks/useRoutes";
+import { useTrips } from "@/hooks/useTrips";
+import { useVehicleTypes } from "@/hooks/useVehicles";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,10 +19,15 @@ export default function DriverTracking() {
   const navigate = useNavigate();
   const { booking } = useBooking();
 
-  const pickup = booking ? pickupPoints.find((p) => p.id === booking.pickupPointId) : null;
-  const pickupOrder = pickup?.order ?? 5;
-  const trip = booking ? trips.find((t) => t.id === booking.tripId) : null;
-  const vehicle = trip ? getVehicleType(trip.vehicleTypeId) : null;
+  const { data: routes = [] } = useRoutes();
+  const { data: allTrips = [] } = useTrips();
+  const { data: vehicleTypes = [] } = useVehicleTypes();
+
+  const trip = booking ? allTrips.find((t) => t.id === booking.tripId) : null;
+  const route = trip ? routes.find((r) => r.id === trip.route_id) : null;
+  const pickup = booking && route ? route.pickup_points.find((p) => p.id === booking.pickupPointId) : null;
+  const pickupOrder = pickup?.sort_order ?? 5;
+  const vehicle = trip ? vehicleTypes.find((v) => v.id === trip.vehicle_type_id) : null;
 
   // Get driver ID from trip (or use mock)
   const driverId = trip?.driverId || `DRV-${String(Math.floor(Math.random() * 100)).padStart(3, "0")}`;
@@ -97,8 +104,8 @@ export default function DriverTracking() {
       // Setup location listener for this driver and pickup
       const cleanup = notificationTriggerService.setupLocationListener(
         driverId,
-        pickup.lat || -6.2, // Use actual coordinates from pickup
-        pickup.lng || 106.8,
+        -6.2, // Default coordinates (pickup_points table has no lat/lng)
+        106.8,
         pickup.label
       );
 

@@ -112,10 +112,10 @@ export default function Auth() {
       // Assign role
       const { error: roleError } = await supabase
         .from("user_roles")
-        .insert({
+        .insert([{
           user_id: authData.user.id,
-          role: registerRole,
-        });
+          role: registerRole as "admin" | "driver",
+        }]);
 
       if (roleError && !roleError.message.includes("duplicate")) throw roleError;
 
@@ -175,10 +175,10 @@ export default function Auth() {
           if (!createData.user) throw new Error("Demo account creation failed");
 
           // Assign role
-          await supabase.from("user_roles").insert({
+          await supabase.from("user_roles").insert([{
             user_id: createData.user.id,
-            role: demoRole,
-          });
+            role: demoRole as "admin" | "driver",
+          }]);
 
           // Auto-login
           const { error: loginError } = await supabase.auth.signInWithPassword({
