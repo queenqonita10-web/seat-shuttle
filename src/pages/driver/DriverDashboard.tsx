@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Bus, Clock, MapPin, Power, Play, CheckCircle2, Fuel, Battery, ShieldCheck 
+  Bus, Clock, MapPin, Power, Play, CheckCircle2, Fuel, Battery, ShieldCheck, User 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VoiceCommandLayer } from "@/components/VoiceCommandLayer";

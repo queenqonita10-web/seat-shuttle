@@ -36,6 +36,9 @@ import DriverTripOverview from "./pages/driver/DriverTripOverview.tsx";
 import DriverPickupDetail from "./pages/driver/DriverPickupDetail.tsx";
 import DriverScanner from "./pages/driver/DriverScanner.tsx";
 import DriverTripSummary from "./pages/driver/DriverTripSummary.tsx";
+import DriverHistory from "./pages/driver/DriverHistory.tsx";
+import DriverEarnings from "./pages/driver/DriverEarnings.tsx";
+import DriverProfile from "./pages/driver/DriverProfile.tsx";
 
 const queryClient = new QueryClient();
 
@@ -83,6 +86,9 @@ const App = () => (
                 <Route path="pickup" element={<DriverPickupDetail />} />
                 <Route path="scan" element={<DriverScanner />} />
                 <Route path="summary" element={<DriverTripSummary />} />
+                <Route path="history" element={<DriverHistory />} />
+                <Route path="earnings" element={<DriverEarnings />} />
+                <Route path="profile" element={<DriverProfile />} />
               </Route>
 
               <Route path="*" element={<NotFound />} />
