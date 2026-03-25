@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useDriver } from "@/context/DriverContext";
-import { trips, routes } from "@/data/mockData";
+import { useRoutes } from "@/hooks/useRoutes";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ const mockHistory = [
 const DriverHistory = () => {
   const navigate = useNavigate();
   const { isDrivingMode } = useDriver();
+  const { data: routesData = [] } = useRoutes();
   const [filter, setFilter] = useState<FilterPeriod>("today");
 
   const filteredHistory = mockHistory.filter((h) => {
@@ -43,18 +44,12 @@ const DriverHistory = () => {
       "min-h-screen pb-8",
       isDrivingMode ? "bg-black text-white" : "bg-background text-foreground"
     )}>
-      {/* Header */}
       <div className={cn(
         "px-6 pb-8 pt-14 shadow-2xl",
         isDrivingMode ? "bg-zinc-900 border-b border-white/10" : "bg-primary text-primary-foreground"
       )}>
         <div className="mx-auto max-w-md">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="mb-4 -ml-2 text-inherit hover:bg-white/10"
-            onClick={() => navigate("/driver")}
-          >
+          <Button variant="ghost" size="icon" className="mb-4 -ml-2 text-inherit hover:bg-white/10" onClick={() => navigate("/driver")}>
             <ArrowLeft size={24} />
           </Button>
           <h1 className="text-3xl font-black uppercase tracking-tight">Riwayat Trip</h1>
@@ -65,11 +60,7 @@ const DriverHistory = () => {
       </div>
 
       <div className="mx-auto max-w-md px-6 -mt-4 space-y-6">
-        {/* Filter Tabs */}
-        <div className={cn(
-          "flex gap-2 p-1.5 rounded-2xl",
-          isDrivingMode ? "bg-zinc-900" : "bg-muted/50"
-        )}>
+        <div className={cn("flex gap-2 p-1.5 rounded-2xl", isDrivingMode ? "bg-zinc-900" : "bg-muted/50")}>
           {(["today", "week", "month"] as FilterPeriod[]).map((p) => (
             <button
               key={p}
@@ -86,7 +77,6 @@ const DriverHistory = () => {
           ))}
         </div>
 
-        {/* Trip List */}
         {filteredHistory.length === 0 ? (
           <div className="text-center py-16 opacity-50">
             <Clock size={48} className="mx-auto mb-4" />
@@ -95,7 +85,7 @@ const DriverHistory = () => {
         ) : (
           <div className="space-y-3">
             {filteredHistory.map((trip, i) => {
-              const route = routes.find((r) => r.id === trip.routeId);
+              const route = routesData.find((r) => r.id === trip.routeId);
               return (
                 <Card key={i} className={cn(
                   "border-0 rounded-2xl overflow-hidden transition-all",
@@ -121,17 +111,11 @@ const DriverHistory = () => {
                     </div>
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-4">
-                        <span className="flex items-center gap-1 font-bold opacity-60">
-                          <Clock size={14} /> {trip.time}
-                        </span>
-                        <span className="flex items-center gap-1 font-bold opacity-60">
-                          <Users size={14} /> {trip.pax} PAX
-                        </span>
+                        <span className="flex items-center gap-1 font-bold opacity-60"><Clock size={14} /> {trip.time}</span>
+                        <span className="flex items-center gap-1 font-bold opacity-60"><Users size={14} /> {trip.pax} PAX</span>
                       </div>
                       {trip.earnings > 0 && (
-                        <span className="font-black text-primary">
-                          Rp {trip.earnings.toLocaleString("id-ID")}
-                        </span>
+                        <span className="font-black text-primary">Rp {trip.earnings.toLocaleString("id-ID")}</span>
                       )}
                     </div>
                     <p className="text-xs opacity-40 mt-2 font-bold">{trip.date}</p>

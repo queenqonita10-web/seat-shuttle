@@ -2,63 +2,45 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { Bar, BarChart, XAxis, YAxis, ResponsiveContainer, CartesianGrid, Tooltip } from "recharts";
+import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar } from "recharts";
 import { 
-  BookOpen, 
-  Bus, 
-  Users, 
-  DollarSign, 
-  Plus, 
-  ArrowRight, 
-  Activity, 
-  AlertCircle,
-  TrendingUp,
-  UserX
+  BookOpen, Bus, DollarSign, Plus, ArrowRight, Activity, AlertCircle, UserX
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { 
-  mockBookings, 
-  getBookingsByDay, 
-  trips, 
-  routes, 
-  formatPrice, 
-  getFareForPickup,
-  drivers
-} from "@/data/mockData";
+import { useAdminDashboard } from "@/hooks/admin/useAdminDashboard";
+import { useAdminBookings } from "@/hooks/admin/useAdminBookings";
+import { useAdminTrips } from "@/hooks/admin/useAdminTrips";
+import { useAdminDrivers } from "@/hooks/admin/useAdminDrivers";
+import { formatPrice } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const chartConfig = {
-  bookings: { label: "Bookings", color: "hsl(var(--primary))" },
-};
+// Mock chart data (will be replaced with real aggregation later)
+const chartData = [
+  { day: "Mon", bookings: 5 },
+  { day: "Tue", bookings: 8 },
+  { day: "Wed", bookings: 3 },
+  { day: "Thu", bookings: 7 },
+  { day: "Fri", bookings: 12 },
+  { day: "Sat", bookings: 9 },
+  { day: "Sun", bookings: 4 },
+];
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const today = new Date().toDateString();
-  const todayBookings = mockBookings.filter(b => new Date(b.createdAt).toDateString() === today);
-  const paidBookings = mockBookings.filter(b => b.paymentStatus === "paid");
-  
-  const totalRevenue = paidBookings.reduce((sum, b) => {
-    const trip = trips.find(t => t.id === b.tripId);
-    if (!trip) return sum;
-    const route = routes.find(r => r.id === trip.routeId);
-    if (!route) return sum;
-    return sum + (getFareForPickup(route, b.pickupPointId) || 0);
-  }, 0);
+  const { data: dashStats, isLoading: statsLoading } = useAdminDashboard();
+  const { data: bookings = [], isLoading: bookingsLoading } = useAdminBookings();
+  const { data: trips = [] } = useAdminTrips();
+  const { data: drivers = [] } = useAdminDrivers();
 
   const activeTrips = trips.filter(t => t.status === "active");
-  const totalPassengers = mockBookings.length;
-  const chartData = getBookingsByDay();
-  const recentBookings = [...mockBookings].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 5);
-  
-  const noShowCount = mockBookings.filter(b => b.status === "no_show").length;
-  const noShowRate = Math.round((noShowCount / (totalPassengers || 1)) * 100);
+  const recentBookings = [...bookings].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
 
   const stats = [
-    { label: "Bookings Today", value: todayBookings.length, icon: BookOpen, color: "text-blue-600", bg: "bg-blue-50" },
-    { label: "Active Trips", value: activeTrips.length, icon: Activity, color: "text-green-600", bg: "bg-green-50" },
-    { label: "Total Revenue", value: formatPrice(totalRevenue), icon: DollarSign, color: "text-amber-600", bg: "bg-amber-50" },
-    { label: "No-Show Rate", value: `${noShowRate}%`, icon: UserX, color: "text-red-600", bg: "bg-red-50" },
+    { label: "Total Bookings", value: statsLoading ? "..." : dashStats?.totalBookings ?? 0, icon: BookOpen, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Active Trips", value: statsLoading ? "..." : dashStats?.activeTrips ?? 0, icon: Activity, color: "text-green-600", bg: "bg-green-50" },
+    { label: "Total Revenue", value: statsLoading ? "..." : formatPrice(dashStats?.totalRevenue ?? 0), icon: DollarSign, color: "text-amber-600", bg: "bg-amber-50" },
+    { label: "Active Drivers", value: statsLoading ? "..." : dashStats?.activeDrivers ?? 0, icon: UserX, color: "text-red-600", bg: "bg-red-50" },
   ];
 
   return (
@@ -83,8 +65,8 @@ export default function Dashboard() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
-        {/* Main Chart Section */}
         <div className="lg:col-span-2 space-y-8">
+          {/* Chart */}
           <Card className="border-none shadow-sm">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -100,18 +82,9 @@ export default function Dashboard() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                    <XAxis 
-                      dataKey="day" 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#888', fontSize: 12 }} 
-                    />
-                    <YAxis 
-                      axisLine={false} 
-                      tickLine={false} 
-                      tick={{ fill: '#888', fontSize: 12 }} 
-                    />
-                    <Tooltip 
+                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fill: '#888', fontSize: 12 }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#888', fontSize: 12 }} />
+                    <Tooltip
                       cursor={{ fill: '#f8f9fa' }}
                       content={({ active, payload }) => {
                         if (active && payload && payload.length) {
@@ -125,83 +98,77 @@ export default function Dashboard() {
                         return null;
                       }}
                     />
-                    <Bar 
-                      dataKey="bookings" 
-                      fill="hsl(var(--primary))" 
-                      radius={[6, 6, 0, 0]} 
-                      barSize={40}
-                    />
+                    <Bar dataKey="bookings" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} barSize={40} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
 
-          {/* Recent Activity Table */}
+          {/* Recent Bookings */}
           <Card className="border-none shadow-sm overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-lg font-bold">Recent Bookings</CardTitle>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/admin/bookings")}>
-                View All
-              </Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/admin/bookings")}>View All</Button>
             </CardHeader>
             <CardContent className="p-0">
-              <Table>
-                <TableHeader className="bg-muted/30">
-                  <TableRow>
-                    <TableHead className="pl-6 uppercase text-[10px] font-bold tracking-wider">Passenger</TableHead>
-                    <TableHead className="uppercase text-[10px] font-bold tracking-wider">Route</TableHead>
-                    <TableHead className="uppercase text-[10px] font-bold tracking-wider">Payment</TableHead>
-                    <TableHead className="pr-6 text-right uppercase text-[10px] font-bold tracking-wider">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentBookings.map((booking) => {
-                    const trip = trips.find(t => t.id === booking.tripId);
-                    const route = trip ? routes.find(r => r.id === trip.routeId) : null;
-                    return (
+              {bookingsLoading ? (
+                <div className="p-6 space-y-3">
+                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow>
+                      <TableHead className="pl-6 uppercase text-[10px] font-bold tracking-wider">Passenger</TableHead>
+                      <TableHead className="uppercase text-[10px] font-bold tracking-wider">Seat</TableHead>
+                      <TableHead className="uppercase text-[10px] font-bold tracking-wider">Payment</TableHead>
+                      <TableHead className="pr-6 text-right uppercase text-[10px] font-bold tracking-wider">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {recentBookings.map((booking) => (
                       <TableRow key={booking.id} className="hover:bg-muted/20 transition-colors">
                         <TableCell className="pl-6">
                           <div>
-                            <p className="font-bold text-sm">{booking.passengerName}</p>
-                            <p className="text-xs text-muted-foreground">{booking.passengerPhone}</p>
+                            <p className="font-bold text-sm">{booking.passenger_name}</p>
+                            <p className="text-xs text-muted-foreground">{booking.passenger_phone}</p>
                           </div>
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="font-medium bg-muted/50 border-none">
-                            {route?.name || "N/A"}
+                            {booking.seat_number}
                           </Badge>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Badge className={cn(
                               "h-2 w-2 rounded-full p-0",
-                              booking.paymentStatus === "paid" ? "bg-green-500" : "bg-yellow-500"
+                              booking.payment_status === "paid" || booking.payment_status === "COMPLETED" ? "bg-green-500" : "bg-yellow-500"
                             )} />
-                            <span className="text-xs font-medium uppercase">{booking.paymentStatus}</span>
+                            <span className="text-xs font-medium uppercase">{booking.payment_status}</span>
                           </div>
                         </TableCell>
                         <TableCell className="pr-6 text-right">
                           <Badge className={cn(
                             "rounded-md px-2 py-0.5 text-[10px] font-black uppercase",
-                            booking.status === "picked_up" ? "bg-green-500/10 text-green-600" : 
+                            booking.status === "picked_up" ? "bg-green-500/10 text-green-600" :
                             booking.status === "no_show" ? "bg-red-500/10 text-red-600" : "bg-blue-500/10 text-blue-600"
                           )}>
                             {booking.status.replace('_', ' ')}
                           </Badge>
                         </TableCell>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Sidebar Panel: Real-time & Driver Status */}
+        {/* Sidebar */}
         <div className="space-y-8">
-          {/* Active Trips Card */}
           <Card className="border-none shadow-sm bg-primary text-primary-foreground">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
@@ -211,33 +178,29 @@ export default function Dashboard() {
             </CardHeader>
             <CardContent className="space-y-4">
               {activeTrips.length > 0 ? (
-                activeTrips.slice(0, 3).map((trip) => {
-                  const route = routes.find(r => r.id === trip.routeId);
-                  const driver = drivers.find(d => d.id === trip.driverId);
-                  return (
-                    <div key={trip.id} className="bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/10">
-                      <div className="flex justify-between items-start mb-2">
-                        <p className="font-bold text-sm">{route?.name}</p>
-                        <p className="text-[10px] font-black uppercase tracking-widest opacity-70">{trip.departureTime}</p>
-                      </div>
-                      <p className="text-xs opacity-80 mb-3">Driver: {driver?.name || "Unassigned"}</p>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
-                          <div className="h-full bg-white w-1/3" /> {/* mock progress */}
-                        </div>
-                        <span className="text-[10px] font-bold">Stop 4/12</span>
-                      </div>
+                activeTrips.slice(0, 3).map((trip) => (
+                  <div key={trip.id} className="bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/10">
+                    <div className="flex justify-between items-start mb-2">
+                      <p className="font-bold text-sm">{trip.routes?.name ?? "—"}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest opacity-70">{trip.departure_time}</p>
                     </div>
-                  );
-                })
+                    <p className="text-xs opacity-80 mb-3">Driver: {trip.drivers?.name || "Unassigned"}</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
+                        <div className="h-full bg-white w-1/3" />
+                      </div>
+                      <span className="text-[10px] font-bold">In Progress</span>
+                    </div>
+                  </div>
+                ))
               ) : (
                 <div className="py-8 text-center opacity-60">
                   <Bus className="h-12 w-12 mx-auto mb-2 opacity-20" />
                   <p className="text-sm font-medium">No active trips currently</p>
                 </div>
               )}
-              <Button 
-                variant="secondary" 
+              <Button
+                variant="secondary"
                 className="w-full bg-white text-primary hover:bg-white/90 font-bold"
                 onClick={() => navigate("/admin/monitoring")}
               >
@@ -246,7 +209,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Driver Status Card */}
           <Card className="border-none shadow-sm">
             <CardHeader className="pb-2 flex flex-row items-center justify-between">
               <CardTitle className="text-lg font-bold">Driver Status</CardTitle>
@@ -266,7 +228,7 @@ export default function Dashboard() {
                   </div>
                   <Badge className={cn(
                     "h-2 w-2 rounded-full p-0 border-none",
-                    driver.status === "on_trip" ? "bg-green-500" : 
+                    driver.status === "on_trip" ? "bg-green-500" :
                     driver.status === "online" ? "bg-blue-500" : "bg-gray-300"
                   )} />
                 </div>
@@ -277,7 +239,6 @@ export default function Dashboard() {
             </CardContent>
           </Card>
 
-          {/* Alerts Card */}
           <Card className="border-none shadow-sm border-l-4 border-red-500">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-black uppercase tracking-widest text-red-600 flex items-center gap-2">
@@ -287,11 +248,11 @@ export default function Dashboard() {
             <CardContent className="space-y-3">
               <div className="p-3 rounded-lg bg-red-50 border border-red-100">
                 <p className="text-xs font-bold text-red-700">Low Seats Warning</p>
-                <p className="text-[10px] text-red-600 mt-0.5">Trip #TR-942 (Rayon A) is 90% full for tomorrow.</p>
+                <p className="text-[10px] text-red-600 mt-0.5">Some trips are nearing full capacity.</p>
               </div>
               <div className="p-3 rounded-lg bg-amber-50 border border-amber-100">
                 <p className="text-xs font-bold text-amber-700">Driver Delay</p>
-                <p className="text-[10px] text-amber-600 mt-0.5">Driver Agus is 12 mins behind schedule on Trip #TR-102.</p>
+                <p className="text-[10px] text-amber-600 mt-0.5">Check monitoring for delays.</p>
               </div>
             </CardContent>
           </Card>

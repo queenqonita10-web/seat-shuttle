@@ -1,76 +1,28 @@
-import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-
-interface Booking {
-  id: string;
-  bookingId: string;
-  passengerName: string;
-  route: string;
-  date: string;
-  seats: string;
-  status: 'confirmed' | 'pending' | 'cancelled';
-  amount: number;
-  paymentStatus: 'paid' | 'pending';
-}
+import { useAdminBookings } from '@/hooks/admin/useAdminBookings';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const AdminBookings = () => {
-  const [bookings] = useState<Booking[]>([
-    {
-      id: '1',
-      bookingId: 'BK-001',
-      passengerName: 'John Doe',
-      route: 'Jakarta - Bandung',
-      date: '2024-01-15',
-      seats: 'A1, A2',
-      status: 'confirmed',
-      amount: 250000,
-      paymentStatus: 'paid',
-    },
-    {
-      id: '2',
-      bookingId: 'BK-002',
-      passengerName: 'Jane Smith',
-      route: 'Bandung - Jakarta',
-      date: '2024-01-16',
-      seats: 'B5',
-      status: 'pending',
-      amount: 125000,
-      paymentStatus: 'pending',
-    },
-    {
-      id: '3',
-      bookingId: 'BK-003',
-      passengerName: 'Mike Johnson',
-      route: 'Jakarta - Surabaya',
-      date: '2024-01-17',
-      seats: 'C1, C2, C3',
-      status: 'confirmed',
-      amount: 375000,
-      paymentStatus: 'paid',
-    },
-  ]);
+  const { data: bookings = [], isLoading } = useAdminBookings();
 
   const getStatusBadge = (status: string) => {
-    const variants: Record<string, any> = {
+    const variants: Record<string, string> = {
       confirmed: 'bg-green-100 text-green-800',
       pending: 'bg-yellow-100 text-yellow-800',
       cancelled: 'bg-red-100 text-red-800',
+      picked_up: 'bg-green-100 text-green-800',
+      no_show: 'bg-red-100 text-red-800',
     };
     return variants[status] || variants.pending;
   };
 
   const getPaymentBadge = (status: string) => {
-    return status === 'paid'
+    return status === 'paid' || status === 'COMPLETED'
       ? 'bg-green-100 text-green-800'
       : 'bg-red-100 text-red-800';
   };
@@ -79,7 +31,7 @@ const AdminBookings = () => {
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-3xl font-bold mb-2">Bookings</h1>
-        <p className="text-gray-400">Manage all passenger bookings</p>
+        <p className="text-muted-foreground">Manage all passenger bookings</p>
       </div>
 
       <Card>
@@ -88,48 +40,50 @@ const AdminBookings = () => {
           <CardDescription>{bookings.length} total bookings</CardDescription>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Booking ID</TableHead>
-                <TableHead>Passenger</TableHead>
-                <TableHead>Route</TableHead>
-                <TableHead>Date</TableHead>
-                <TableHead>Seats</TableHead>
-                <TableHead>Amount</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {bookings.map((booking) => (
-                <TableRow key={booking.id}>
-                  <TableCell className="font-medium">{booking.bookingId}</TableCell>
-                  <TableCell>{booking.passengerName}</TableCell>
-                  <TableCell>{booking.route}</TableCell>
-                  <TableCell>{booking.date}</TableCell>
-                  <TableCell>{booking.seats}</TableCell>
-                  <TableCell>Rp {booking.amount.toLocaleString('id-ID')}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusBadge(booking.status)}>
-                      {booking.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={getPaymentBadge(booking.paymentStatus)}>
-                      {booking.paymentStatus}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="outline" size="sm">
-                      View
-                    </Button>
-                  </TableCell>
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Booking ID</TableHead>
+                  <TableHead>Passenger</TableHead>
+                  <TableHead>Trip</TableHead>
+                  <TableHead>Seat</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {bookings.map((booking) => (
+                  <TableRow key={booking.id}>
+                    <TableCell className="font-medium font-mono text-xs">{booking.id.slice(0, 8)}</TableCell>
+                    <TableCell>{booking.passenger_name}</TableCell>
+                    <TableCell className="font-mono text-xs">{booking.trip_id.slice(0, 8)}</TableCell>
+                    <TableCell>{booking.seat_number}</TableCell>
+                    <TableCell>Rp {booking.fare.toLocaleString('id-ID')}</TableCell>
+                    <TableCell>
+                      <Badge className={getStatusBadge(booking.status)}>
+                        {booking.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getPaymentBadge(booking.payment_status)}>
+                        {booking.payment_status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="outline" size="sm">View</Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
