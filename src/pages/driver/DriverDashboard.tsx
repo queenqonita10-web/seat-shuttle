@@ -76,7 +76,17 @@ const DriverDashboard = () => {
               </p>
             </div>
           </div>
-          <button
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/driver/profile")}
+              className={cn(
+                "w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all active:scale-90",
+                isDrivingMode ? "border-white/20 text-white/60" : "border-white/30 text-white/80"
+              )}
+            >
+              <User size={20} strokeWidth={2.5} />
+            </button>
+            <button
             onClick={() => {
               setIsOnline(!isOnline);
               playFeedback("action");
