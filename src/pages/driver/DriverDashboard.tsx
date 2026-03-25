@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { 
-  Bus, Clock, MapPin, Power, Play, CheckCircle2, Fuel, Battery, ShieldCheck 
+  Bus, Clock, MapPin, Power, Play, CheckCircle2, Fuel, Battery, ShieldCheck, User 
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { VoiceCommandLayer } from "@/components/VoiceCommandLayer";
@@ -76,7 +76,17 @@ const DriverDashboard = () => {
               </p>
             </div>
           </div>
-          <button
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/driver/profile")}
+              className={cn(
+                "w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all active:scale-90",
+                isDrivingMode ? "border-white/20 text-white/60" : "border-white/30 text-white/80"
+              )}
+            >
+              <User size={20} strokeWidth={2.5} />
+            </button>
+            <button
             onClick={() => {
               setIsOnline(!isOnline);
               playFeedback("action");
@@ -89,7 +99,8 @@ const DriverDashboard = () => {
             )}
           >
             <Power size={32} strokeWidth={3} />
-          </button>
+           </button>
+          </div>
         </div>
       </div>
 
@@ -158,14 +169,14 @@ const DriverDashboard = () => {
 
         {/* Glanceable Stats - High Contrast */}
         <div className="grid grid-cols-2 gap-4 pb-12">
-          <button className={cn(
+          <button onClick={() => navigate("/driver/history")} className={cn(
             "p-6 rounded-[2rem] text-left transition-all active:scale-95 min-h-[100px]",
             isDrivingMode ? "bg-zinc-900 border border-white/10" : "bg-muted/50"
           )}>
             <p className="text-xs font-black opacity-50 uppercase tracking-widest mb-2">Today's Progress</p>
             <p className="text-4xl font-black tracking-tighter">0<span className="text-xl opacity-30"> / 3</span></p>
           </button>
-          <button className={cn(
+          <button onClick={() => navigate("/driver/earnings")} className={cn(
             "p-6 rounded-[2rem] text-left transition-all active:scale-95 min-h-[100px]",
             isDrivingMode ? "bg-zinc-900 border border-white/10" : "bg-muted/50"
           )}>
