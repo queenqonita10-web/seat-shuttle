@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { BookingProvider } from "@/context/BookingContext";
 import { DriverProvider } from "@/context/DriverContext";
 import { AuthProvider } from "@/hooks/useAuth";
+import { useSessionValidation } from "@/hooks/useSessionValidation";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
 import Index from "./pages/Index.tsx";
@@ -34,6 +35,7 @@ import AdminDrivers from "./pages/admin/AdminDrivers.tsx";
 import AdminPricing from "./pages/admin/AdminPricing.tsx";
 import AdminSeatMap from "./pages/admin/AdminSeatMap.tsx";
 import AdminLayoutDesigner from "./pages/admin/AdminLayoutDesigner.tsx";
+import EmailVerification from "./pages/EmailVerification.tsx";
 
 import DriverDashboard from "./pages/driver/DriverDashboard.tsx";
 import DriverTripOverview from "./pages/driver/DriverTripOverview.tsx";
@@ -46,19 +48,30 @@ import DriverProfile from "./pages/driver/DriverProfile.tsx";
 
 const queryClient = new QueryClient();
 
+/**
+ * Component that runs session validation inside AuthProvider context
+ * Must be inside AuthProvider to access useAuth hook
+ */
+function SessionValidationWrapper({ children }: { children: React.ReactNode }) {
+  useSessionValidation();
+  return <>{children}</>;
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
       <AuthProvider>
-        <BookingProvider>
-          <DriverProvider>
-            <BrowserRouter>
+        <SessionValidationWrapper>
+          <BookingProvider>
+            <DriverProvider>
+              <BrowserRouter>
               <Routes>
                 {/* Public Routes */}
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/verify-email" element={<EmailVerification />} />
 
                 {/* User Routes */}
                 <Route path="/" element={<Index />} />
@@ -117,10 +130,11 @@ const App = () => (
               </Routes>
             </BrowserRouter>
           </DriverProvider>
-        </BookingProvider>
-      </AuthProvider>
+        </BookingProvider>        </SessionValidationWrapper>      </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
 
 export default App;
+
+

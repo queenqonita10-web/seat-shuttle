@@ -33,34 +33,80 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Set up auth state listener BEFORE checking session
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      async (_event, sessionData) => {
+        setSession(sessionData);
+        setUser(sessionData?.user ?? null);
 
-        if (session?.user) {
-          // Fetch role - use setTimeout to avoid deadlock with Supabase
-          setTimeout(async () => {
-            const { data } = await supabase
+        if (sessionData?.user) {
+          try {
+            // Fetch user role from database
+            const { data, error } = await supabase
               .from("user_roles")
               .select("role")
-              .eq("user_id", session.user.id)
-              .maybeSingle();
-            setRole((data?.role as AppRole) ?? null);
-            setLoading(false);
-          }, 0);
+              .eq("user_id", sessionData.user.id)
+              .single();
+            
+            if (error) {
+              // User might not have a role assigned yet, which is OK
+              console.warn("Failed to fetch user role:", error.message);
+              setRole(null);
+            } else {
+              setRole((data.role as AppRole) ?? null);
+            }
+          } catch (err) {
+            console.error("Unexpected error fetching role:", err);
+            setRole(null);
+          }
         } else {
+          // User logged out
           setRole(null);
-          setLoading(false);
         }
+        
+        // Always set loading to false once session is determined
+        setLoading(false);
       }
     );
 
-    // Check existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (!session) setLoading(false);
-    });
+    // Check for existing session (handles page reload)
+    const checkSession = async () => {
+      try {
+        const { data: { session: existingSession }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Error getting session:", error);
+          setLoading(false);
+          return;
+        }
+
+        if (existingSession?.user) {
+          setSession(existingSession);
+          setUser(existingSession.user);
+          
+          // Fetch role for existing session
+          try {
+            const { data, error: roleError } = await supabase
+              .from("user_roles")
+              .select("role")
+              .eq("user_id", existingSession.user.id)
+              .single();
+            
+            if (!roleError && data) {
+              setRole((data.role as AppRole) ?? null);
+            }
+          } catch (err) {
+            console.error("Error fetching role for existing session:", err);
+          }
+        } else {
+          setSession(null);
+          setUser(null);
+          setRole(null);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkSession();
 
     return () => subscription.unsubscribe();
   }, []);
