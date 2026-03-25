@@ -6,12 +6,59 @@ export interface PickupPoint {
   fare: number; // fare in Rupiah from this pickup point
 }
 
+export interface SeatLayoutTemplate {
+  id: string;
+  name: string;
+  rows: number;
+  cols: number;
+  layout: SeatLayoutCell[][];
+  createdAt: string;
+}
+
+export type SeatLayoutCellType = "seat-regular" | "seat-premium" | "seat-vip" | "driver" | "baggage" | "empty";
+
+export interface SeatLayoutCell {
+  type: SeatLayoutCellType;
+  seatNumber?: string;
+}
+
 export interface VehicleType {
   id: string;
   name: string;
-  /** Each row is an array of cell types: "seat" | "driver" | "baggage" | "empty" */
+  capacity: number;
+  layoutTemplateId?: string;
+  /** Fallback layout if no template is assigned */
   layout: string[][];
 }
+
+export const seatLayoutTemplates: SeatLayoutTemplate[] = [
+  {
+    id: "template-hiace",
+    name: "Standard Hiace (10 Seats)",
+    rows: 5,
+    cols: 3,
+    createdAt: new Date().toISOString(),
+    layout: [
+      [{ type: "seat-regular", seatNumber: "1" }, { type: "empty" }, { type: "driver" }],
+      [{ type: "seat-regular", seatNumber: "2" }, { type: "seat-regular", seatNumber: "3" }, { type: "seat-regular", seatNumber: "4" }],
+      [{ type: "seat-regular", seatNumber: "5" }, { type: "seat-regular", seatNumber: "6" }, { type: "seat-regular", seatNumber: "7" }],
+      [{ type: "seat-regular", seatNumber: "8" }, { type: "seat-regular", seatNumber: "9" }, { type: "seat-regular", seatNumber: "10" }],
+      [{ type: "baggage" }, { type: "baggage" }, { type: "baggage" }],
+    ],
+  },
+  {
+    id: "template-suv",
+    name: "Luxury SUV (5 Seats)",
+    rows: 3,
+    cols: 2,
+    createdAt: new Date().toISOString(),
+    layout: [
+      [{ type: "seat-premium", seatNumber: "1" }, { type: "driver" }],
+      [{ type: "seat-premium", seatNumber: "2" }, { type: "seat-premium", seatNumber: "3" }],
+      [{ type: "baggage" }, { type: "baggage" }],
+    ],
+  },
+];
 
 export interface Route {
   id: string;
@@ -31,6 +78,7 @@ export interface Route {
 export interface Vehicle {
   id: string;
   vehicleTypeId: string;
+  layoutTemplateId?: string;
   brand: string;
   model: string;
   year: number;

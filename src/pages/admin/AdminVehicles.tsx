@@ -24,6 +24,11 @@ import {
   DialogTrigger,
   DialogDescription
 } from "@/components/ui/dialog";
+import { 
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Label } from "@/components/ui/label";
 import { 
   Select, 
@@ -35,6 +40,7 @@ import {
 import { 
   vehicles as initialVehicles, 
   vehicleTypes,
+  seatLayoutTemplates,
   routes,
   addAuditLog,
   Vehicle
@@ -65,10 +71,12 @@ export default function AdminVehicles() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
+  const [isLayoutOpen, setIsLayoutOpen] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
     vehicleTypeId: "",
+    layoutTemplateId: "",
     brand: "",
     model: "",
     year: new Date().getFullYear(),
@@ -204,6 +212,7 @@ export default function AdminVehicles() {
   const resetForm = () => {
     setFormData({
       vehicleTypeId: "",
+      layoutTemplateId: "",
       brand: "",
       model: "",
       year: new Date().getFullYear(),
@@ -218,6 +227,7 @@ export default function AdminVehicles() {
     setSelectedVehicle(vehicle);
     setFormData({
       vehicleTypeId: vehicle.vehicleTypeId,
+      layoutTemplateId: vehicle.layoutTemplateId || "",
       brand: vehicle.brand,
       model: vehicle.model,
       year: vehicle.year,
@@ -252,81 +262,96 @@ export default function AdminVehicles() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-3xl font-black tracking-tight uppercase italic text-primary">Vehicle Management</h2>
-          <p className="text-sm text-muted-foreground mt-1">Kelola armada bus dan SUV operasional PYU-GO</p>
+          <p className="text-sm text-muted-foreground mt-1 font-medium">Kelola armada bus dan SUV operasional PYU-GO</p>
         </div>
         <div className="flex gap-2 w-full md:w-auto">
-          <Button variant="outline" className="font-bold" onClick={handleExport}>
+          <Button variant="outline" className="font-bold border-2" onClick={handleExport}>
             <Download className="h-4 w-4 mr-2" /> Export
           </Button>
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="font-bold">
+              <Button className="font-bold bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20">
                 <Plus className="h-4 w-4 mr-2" /> Tambah Armada
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px]">
               <DialogHeader>
-                <DialogTitle>Registrasi Armada Baru</DialogTitle>
+                <DialogTitle className="text-xl font-black uppercase italic">Registrasi Armada Baru</DialogTitle>
                 <DialogDescription>Masukkan data teknis dan legalitas kendaraan.</DialogDescription>
               </DialogHeader>
               <div className="grid gap-6 py-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Jenis Kendaraan</Label>
+                    <Label className="text-xs font-black uppercase">Jenis Kendaraan</Label>
                     <Select value={formData.vehicleTypeId} onValueChange={val => setFormData({...formData, vehicleTypeId: val})}>
-                      <SelectTrigger>
+                      <SelectTrigger className="font-bold">
                         <SelectValue placeholder="Pilih jenis" />
                       </SelectTrigger>
                       <SelectContent>
                         {vehicleTypes.map(vt => (
-                          <SelectItem key={vt.id} value={vt.id}>{vt.name}</SelectItem>
+                          <SelectItem key={vt.id} value={vt.id} className="font-bold uppercase text-xs">{vt.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="plate">Plat Nomor (Indonesia)</Label>
-                    <Input id="plate" placeholder="B 1234 XYZ" value={formData.licensePlate} onChange={e => setFormData({...formData, licensePlate: e.target.value.toUpperCase()})} />
+                    <Label htmlFor="plate" className="text-xs font-black uppercase">Plat Nomor (Indonesia)</Label>
+                    <Input id="plate" placeholder="B 1234 XYZ" value={formData.licensePlate} onChange={e => setFormData({...formData, licensePlate: e.target.value.toUpperCase()})} className="font-mono font-bold" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-black uppercase">Seat Layout Template</Label>
+                    <Select value={formData.layoutTemplateId} onValueChange={val => setFormData({...formData, layoutTemplateId: val})}>
+                      <SelectTrigger className="font-bold italic">
+                        <SelectValue placeholder="Pilih template" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {seatLayoutTemplates.map(t => (
+                          <SelectItem key={t.id} value={t.id} className="font-bold uppercase text-[10px] italic">
+                            {t.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="brand">Brand</Label>
+                    <Label htmlFor="brand" className="text-xs font-black uppercase">Brand</Label>
                     <Input id="brand" placeholder="Toyota" value={formData.brand} onChange={e => setFormData({...formData, brand: e.target.value})} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="model">Model</Label>
+                    <Label htmlFor="model" className="text-xs font-black uppercase">Model</Label>
                     <Input id="model" placeholder="Hiace Premio" value={formData.model} onChange={e => setFormData({...formData, model: e.target.value})} />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="year">Tahun</Label>
+                    <Label htmlFor="year" className="text-xs font-black uppercase">Tahun</Label>
                     <Input id="year" type="number" value={formData.year} onChange={e => setFormData({...formData, year: Number(e.target.value)})} />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="color">Warna</Label>
+                    <Label htmlFor="color" className="text-xs font-black uppercase">Warna</Label>
                     <Input id="color" placeholder="Putih" value={formData.color} onChange={e => setFormData({...formData, color: e.target.value})} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Rute Penugasan</Label>
+                    <Label className="text-xs font-black uppercase">Rute Penugasan</Label>
                     <Select value={formData.assignedRouteId} onValueChange={val => setFormData({...formData, assignedRouteId: val})}>
-                      <SelectTrigger>
+                      <SelectTrigger className="font-bold">
                         <SelectValue placeholder="Pilih rute" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="none">Tanpa Penugasan</SelectItem>
+                        <SelectItem value="none" className="font-bold uppercase text-xs">Tanpa Penugasan</SelectItem>
                         {routes.map(r => (
-                          <SelectItem key={r.id} value={r.id}>{r.routeCode} - {r.name}</SelectItem>
+                          <SelectItem key={r.id} value={r.id} className="font-bold uppercase text-xs">{r.routeCode} - {r.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Batal</Button>
-                <Button onClick={handleCreateVehicle}>Daftarkan Armada</Button>
+              <DialogFooter className="bg-muted/30 p-4 -mx-6 -mb-6 mt-4">
+                <Button variant="ghost" onClick={() => setIsCreateDialogOpen(false)} className="font-bold uppercase tracking-widest text-xs">BATAL</Button>
+                <Button onClick={handleCreateVehicle} className="font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20">DAFTARKAN ARMADA</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -340,20 +365,20 @@ export default function AdminVehicles() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
               placeholder="Cari plat nomor, brand, atau model..." 
-              className="pl-10"
+              className="pl-10 bg-white border-none shadow-inner font-medium"
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
             />
           </div>
           <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="w-[200px]">
-              <Filter className="h-4 w-4 mr-2" />
+            <SelectTrigger className="w-[200px] bg-white border-none shadow-sm font-bold uppercase text-xs">
+              <Filter className="h-4 w-4 mr-2 text-primary" />
               <SelectValue placeholder="Jenis Kendaraan" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Semua Jenis</SelectItem>
+              <SelectItem value="all" className="font-bold uppercase text-xs">SEMUA JENIS</SelectItem>
               {vehicleTypes.map(vt => (
-                <SelectItem key={vt.id} value={vt.id}>{vt.name}</SelectItem>
+                <SelectItem key={vt.id} value={vt.id} className="font-bold uppercase text-xs">{vt.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -361,16 +386,16 @@ export default function AdminVehicles() {
       </Card>
 
       {/* Vehicles Table */}
-      <Card className="border-none shadow-sm overflow-hidden">
+      <Card className="border-none shadow-xl overflow-hidden rounded-2xl bg-white">
         <Table>
-          <TableHeader className="bg-muted/50">
-            <TableRow>
-              <TableHead className="pl-6 font-black uppercase text-[10px] tracking-widest">Plat Nomor</TableHead>
-              <TableHead className="font-black uppercase text-[10px] tracking-widest">Kendaraan</TableHead>
-              <TableHead className="font-black uppercase text-[10px] tracking-widest">Jenis</TableHead>
-              <TableHead className="font-black uppercase text-[10px] tracking-widest">Rute Aktif</TableHead>
-              <TableHead className="font-black uppercase text-[10px] tracking-widest text-center">Status</TableHead>
-              <TableHead className="pr-6 text-right font-black uppercase text-[10px] tracking-widest">Aksi</TableHead>
+          <TableHeader className="bg-zinc-900">
+            <TableRow className="hover:bg-zinc-900 border-none">
+              <TableHead className="pl-6 font-black uppercase text-[10px] tracking-widest text-zinc-400">Plat Nomor</TableHead>
+              <TableHead className="font-black uppercase text-[10px] tracking-widest text-zinc-400">Kendaraan</TableHead>
+              <TableHead className="font-black uppercase text-[10px] tracking-widest text-zinc-400">Jenis</TableHead>
+              <TableHead className="font-black uppercase text-[10px] tracking-widest text-zinc-400">Rute Aktif</TableHead>
+              <TableHead className="font-black uppercase text-[10px] tracking-widest text-center text-zinc-400">Status</TableHead>
+              <TableHead className="pr-6 text-right font-black uppercase text-[10px] tracking-widest text-zinc-400">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -378,52 +403,88 @@ export default function AdminVehicles() {
               const vt = vehicleTypes.find(t => t.id === v.vehicleTypeId);
               const route = routes.find(r => r.id === v.assignedRouteId);
               return (
-                <TableRow key={v.id} className="group">
+                <TableRow key={v.id} className="group hover:bg-primary/5 transition-colors border-zinc-100">
                   <TableCell className="pl-6">
-                    <div className="bg-zinc-900 text-white px-3 py-1 rounded-md font-mono font-bold text-center border-2 border-zinc-700 shadow-inner w-fit">
+                    <div className="bg-zinc-900 text-white px-4 py-1.5 rounded-lg font-mono font-black text-center border-2 border-zinc-700 shadow-xl w-fit italic tracking-tighter">
                       {v.licensePlate}
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="font-bold">{v.brand} {v.model}</div>
-                    <div className="text-xs text-muted-foreground">{v.color} · {v.year}</div>
+                    <div className="font-black text-zinc-900 uppercase italic">{v.brand} {v.model}</div>
+                    <div className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">{v.color} · {v.year}</div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider">
-                      {vt?.name || "Unknown"}
-                    </Badge>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Badge variant="outline" className="text-[10px] uppercase font-black tracking-widest border-2 border-zinc-200 hover:border-primary transition-colors cursor-help">
+                          {vt?.name || "Unknown"}
+                        </Badge>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-48 p-4 rounded-2xl shadow-2xl border-none bg-zinc-900">
+                        <div className="space-y-3">
+                          <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] text-center border-b border-white/10 pb-2">Seat Layout</p>
+                          <div className="mx-auto space-y-1">
+                            {vt?.layout.map((row, ri) => (
+                              <div key={ri} className="flex justify-center gap-1">
+                                {row.map((cell, ci) => (
+                                  <div
+                                    key={ci}
+                                    className={cn(
+                                      "h-5 w-5 rounded-md text-[8px] flex items-center justify-center font-black",
+                                      cell === "seat" && "bg-primary/20 text-primary border border-primary/40",
+                                      cell === "driver" && "bg-white/10 text-white",
+                                      cell === "empty" && "bg-transparent",
+                                      cell === "baggage" && "bg-zinc-800 text-zinc-500"
+                                    )}
+                                  >
+                                    {cell === "seat" && "S"}
+                                    {cell === "driver" && "🚌"}
+                                  </div>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </TableCell>
                   <TableCell>
                     {route ? (
-                      <div className="flex items-center gap-2 text-sm font-medium">
-                        <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-primary/10 text-primary border-none font-black text-[10px] px-2">
                           {route.routeCode}
                         </Badge>
-                        <ChevronRight size={12} className="text-muted-foreground" />
-                        <span className="text-xs">{route.name}</span>
+                        <ChevronRight size={12} className="text-primary animate-pulse" />
+                        <span className="text-[10px] font-black uppercase text-zinc-600 tracking-tight">{route.name}</span>
                       </div>
                     ) : (
-                      <span className="text-xs text-muted-foreground italic">Unassigned</span>
+                      <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest italic opacity-50">Unassigned</span>
                     )}
                   </TableCell>
                   <TableCell className="text-center">
                     <Badge className={cn(
-                      "font-black text-[10px] uppercase tracking-widest px-2",
-                      v.status === "active" ? "bg-green-500" : v.status === "maintenance" ? "bg-amber-500" : "bg-zinc-500"
+                      "font-black text-[10px] uppercase tracking-widest px-3 py-1 shadow-sm",
+                      v.status === "active" ? "bg-green-500" : v.status === "maintenance" ? "bg-amber-500 shadow-amber-500/20" : "bg-zinc-400"
                     )}>
                       {v.status}
                     </Badge>
                   </TableCell>
                   <TableCell className="pr-6 text-right">
-                    <div className="flex justify-end gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
-                        setSelectedVehicle(v);
-                        setIsHistoryOpen(true);
-                      }}>
-                        <History size={14} />
+                    <div className="flex justify-end gap-2">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 hover:bg-zinc-100 text-zinc-500" 
+                        title="View History"
+                        onClick={() => {
+                          setSelectedVehicle(v);
+                          setIsHistoryOpen(true);
+                        }}
+                      >
+                        <History size={16} />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(v)}>
-                        <Edit2 size={14} />
+                      <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 text-primary" onClick={() => openEditDialog(v)}>
+                        <Edit2 size={16} />
                       </Button>
                       <Button 
                         variant="ghost" 
@@ -434,7 +495,7 @@ export default function AdminVehicles() {
                           setIsDeleteDialogOpen(true);
                         }}
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={16} />
                       </Button>
                     </div>
                   </TableCell>
@@ -445,53 +506,157 @@ export default function AdminVehicles() {
         </Table>
       </Card>
 
-      {/* Edit & History & Delete Dialogs (Similar to AdminRoutes) */}
-      {/* ... (Implementation logic continues for history tracking display) */}
+      {/* History Dialog */}
       <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
-            <DialogTitle>Riwayat Perubahan Plat Nomor</DialogTitle>
-            <DialogDescription>Tracking legalitas armada {selectedVehicle?.licensePlate}</DialogDescription>
+            <DialogTitle className="text-xl font-black uppercase italic">Riwayat Legalitas</DialogTitle>
+            <DialogDescription className="font-bold text-xs uppercase tracking-widest text-zinc-500">Armada {selectedVehicle?.licensePlate}</DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-4 py-4">
             {selectedVehicle?.history?.length ? (
               selectedVehicle.history.map((h, i) => (
-                <div key={i} className="flex items-start gap-4 p-3 rounded-lg bg-muted/50 border">
-                  <div className="p-2 rounded-full bg-primary/10 text-primary shrink-0">
-                    <ShieldCheck size={16} />
+                <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-muted/30 border-2 border-dashed border-zinc-200">
+                  <div className="p-3 rounded-xl bg-primary/10 text-primary shrink-0 shadow-inner">
+                    <ShieldCheck size={20} />
                   </div>
                   <div>
-                    <p className="text-sm font-bold">Perubahan {h.field}</p>
-                    <div className="flex items-center gap-2 text-xs mt-1">
-                      <span className="line-through text-muted-foreground">{h.oldValue}</span>
-                      <ChevronRight size={12} />
-                      <span className="font-bold text-green-600">{h.newValue}</span>
+                    <p className="text-xs font-black uppercase tracking-widest text-zinc-500">Perubahan {h.field}</p>
+                    <div className="flex items-center gap-3 mt-2">
+                      <span className="line-through text-zinc-400 font-mono text-sm">{h.oldValue}</span>
+                      <ChevronRight size={14} className="text-primary" />
+                      <span className="font-black text-green-600 font-mono text-lg tracking-tighter">{h.newValue}</span>
                     </div>
-                    <p className="text-[10px] text-muted-foreground mt-2">{new Date(h.date).toLocaleString()}</p>
+                    <p className="text-[10px] font-bold text-zinc-400 mt-3 flex items-center gap-1.5">
+                      <Clock size={10} /> {new Date(h.date).toLocaleString('id-ID')}
+                    </p>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 text-muted-foreground italic">Belum ada riwayat perubahan.</div>
+              <div className="text-center py-12 flex flex-col items-center">
+                <ShieldCheck size={48} className="text-zinc-200 mb-4" />
+                <p className="text-xs font-black uppercase tracking-widest text-zinc-400 italic">Belum ada riwayat perubahan legalitas.</p>
+              </div>
             )}
           </div>
+          <DialogFooter className="bg-muted/30 p-4 -mx-6 -mb-6 mt-4">
+            <Button variant="ghost" onClick={() => setIsHistoryOpen(false)} className="font-black uppercase tracking-widest text-xs w-full">TUTUP</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-black uppercase italic">Edit Data Armada</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-6 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-black uppercase">Jenis Kendaraan</Label>
+                <Select value={formData.vehicleTypeId} onValueChange={val => setFormData({...formData, vehicleTypeId: val})}>
+                  <SelectTrigger className="font-bold">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vehicleTypes.map(vt => (
+                      <SelectItem key={vt.id} value={vt.id} className="font-bold uppercase text-xs">{vt.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                  <Label htmlFor="edit-plate" className="text-xs font-black uppercase">Plat Nomor</Label>
+                  <Input id="edit-plate" value={formData.licensePlate} onChange={e => setFormData({...formData, licensePlate: e.target.value.toUpperCase()})} className="font-mono font-bold" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-black uppercase">Seat Layout Template</Label>
+                  <Select value={formData.layoutTemplateId} onValueChange={val => setFormData({...formData, layoutTemplateId: val})}>
+                    <SelectTrigger className="font-bold italic">
+                      <SelectValue placeholder="Pilih template" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {seatLayoutTemplates.map(t => (
+                        <SelectItem key={t.id} value={t.id} className="font-bold uppercase text-[10px] italic">
+                          {t.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-brand" className="text-xs font-black uppercase">Brand</Label>
+                <Input id="edit-brand" value={formData.brand} onChange={e => setFormData({...formData, brand: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-model" className="text-xs font-black uppercase">Model</Label>
+                <Input id="edit-model" value={formData.model} onChange={e => setFormData({...formData, model: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-year" className="text-xs font-black uppercase">Tahun</Label>
+                <Input id="edit-year" type="number" value={formData.year} onChange={e => setFormData({...formData, year: Number(e.target.value)})} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-color" className="text-xs font-black uppercase">Warna</Label>
+                <Input id="edit-color" value={formData.color} onChange={e => setFormData({...formData, color: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-black uppercase">Status Operasional</Label>
+                <Select value={formData.status} onValueChange={(val: "active" | "maintenance" | "inactive") => setFormData({...formData, status: val})}>
+                  <SelectTrigger className="font-bold uppercase text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active" className="font-bold uppercase text-xs">AKTIF</SelectItem>
+                    <SelectItem value="maintenance" className="font-bold uppercase text-xs">MAINTENANCE</SelectItem>
+                    <SelectItem value="inactive" className="font-bold uppercase text-xs">NON-AKTIF</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs font-black uppercase">Rute Penugasan</Label>
+              <Select value={formData.assignedRouteId} onValueChange={val => setFormData({...formData, assignedRouteId: val})}>
+                <SelectTrigger className="font-bold">
+                  <SelectValue placeholder="Pilih rute" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none" className="font-bold uppercase text-xs text-muted-foreground italic">Lepas Penugasan</SelectItem>
+                  {routes.map(r => (
+                    <SelectItem key={r.id} value={r.id} className="font-bold uppercase text-xs">{r.routeCode} - {r.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter className="bg-muted/30 p-4 -mx-6 -mb-6 mt-4">
+            <Button variant="ghost" onClick={() => setIsEditDialogOpen(false)} className="font-bold uppercase tracking-widest text-xs">BATAL</Button>
+            <Button onClick={handleUpdateVehicle} className="font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20">SIMPAN PERUBAHAN</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Delete Confirmation */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="text-red-500" /> Konfirmasi Penghapusan
-            </DialogTitle>
-            <DialogDescription>
-              Menghapus armada <span className="font-bold text-foreground">{selectedVehicle?.licensePlate}</span> akan melepaskan semua penugasan rute terkait.
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader className="flex flex-col items-center text-center">
+            <div className="h-20 w-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center mb-6 shadow-inner">
+              <AlertTriangle size={40} />
+            </div>
+            <DialogTitle className="text-2xl font-black uppercase italic tracking-tight">Konfirmasi Hapus</DialogTitle>
+            <DialogDescription className="font-bold text-zinc-600 mt-2">
+              Menghapus armada <span className="text-zinc-900 font-black">{selectedVehicle?.licensePlate}</span> akan melepaskan semua penugasan rute terkait.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Batal</Button>
-            <Button variant="destructive" onClick={handleDeleteVehicle}>Hapus Armada</Button>
+          <DialogFooter className="grid grid-cols-2 gap-3 mt-8">
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="font-black uppercase text-xs tracking-widest">BATAL</Button>
+            <Button variant="destructive" onClick={handleDeleteVehicle} className="font-black uppercase text-xs tracking-widest shadow-lg shadow-red-500/20">HAPUS ARMADA</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

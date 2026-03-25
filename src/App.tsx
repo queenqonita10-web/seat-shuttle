@@ -26,6 +26,7 @@ import AdminMonitoring from "./pages/admin/AdminMonitoring.tsx";
 import AdminDrivers from "./pages/admin/AdminDrivers.tsx";
 import AdminPricing from "./pages/admin/AdminPricing.tsx";
 import AdminSeatMap from "./pages/admin/AdminSeatMap.tsx";
+import AdminLayoutDesigner from "./pages/admin/AdminLayoutDesigner.tsx";
 
 import DriverDashboard from "./pages/driver/DriverDashboard.tsx";
 import DriverTripOverview from "./pages/driver/DriverTripOverview.tsx";
@@ -58,7 +59,8 @@ const App = () => (
                 <Route index element={<Dashboard />} />
                 <Route path="monitoring" element={<AdminMonitoring />} />
                 <Route path="bookings" element={<AdminBookings />} />
-                <Route path="seats" element={<AdminSeatMap />} />
+                <Route path="seat-map" element={<AdminSeatMap />} />
+                <Route path="layout-designer" element={<AdminLayoutDesigner />} />
                 <Route path="trips" element={<AdminTrips />} />
                 <Route path="routes" element={<AdminRoutes />} />
                 <Route path="drivers" element={<AdminDrivers />} />
