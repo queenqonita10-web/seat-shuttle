@@ -162,8 +162,20 @@ class WebSocketConnectionManager {
       // Validate message structure
       const validated = DriverLocationUpdateSchema.parse(message);
 
+      // Extract required fields explicitly for type safety
+      const locationData: DriverLocationUpdate = {
+        driver_id: String(validated.driver_id),
+        lat: Number(validated.lat),
+        lng: Number(validated.lng),
+        timestamp: String(validated.timestamp),
+        ...(validated.speed !== undefined && { speed: validated.speed }),
+        ...(validated.heading !== undefined && { heading: validated.heading }),
+        ...(validated.accuracy !== undefined && { accuracy: validated.accuracy }),
+        ...(validated.trip_id !== undefined && { trip_id: validated.trip_id }),
+      };
+
       // Check throttle
-      const lastUpdate = this.throttleMap.get(validated.driver_id) || 0;
+      const lastUpdate = this.throttleMap.get(locationData.driver_id) || 0;
       const timeSinceLastUpdate = Date.now() - lastUpdate;
 
       if (timeSinceLastUpdate < MESSAGE_THROTTLE_MS) {
@@ -171,13 +183,13 @@ class WebSocketConnectionManager {
         return;
       }
 
-      this.throttleMap.set(validated.driver_id, Date.now());
+      this.throttleMap.set(locationData.driver_id, Date.now());
       this.stats.lastMessageAt = new Date().toISOString();
 
       this.notifyListeners({
         type: 'location_update',
-        driver_id: validated.driver_id,
-        data: validated,
+        driver_id: locationData.driver_id,
+        data: locationData,
         timestamp: new Date().toISOString(),
       });
     } catch (error) {
@@ -485,17 +497,29 @@ export class RealtimeTrackingService {
     try {
       const validated = DriverLocationUpdateSchema.parse(update);
 
+      // Construct strongly-typed location data
+      const locationData: DriverLocationUpdate = {
+        driver_id: String(validated.driver_id),
+        lat: Number(validated.lat),
+        lng: Number(validated.lng),
+        timestamp: String(validated.timestamp),
+        ...(validated.speed !== undefined && { speed: validated.speed }),
+        ...(validated.heading !== undefined && { heading: validated.heading }),
+        ...(validated.accuracy !== undefined && { accuracy: validated.accuracy }),
+        ...(validated.trip_id !== undefined && { trip_id: validated.trip_id }),
+      };
+
       const event = new CustomEvent('realtime_location_update', {
-        detail: validated,
+        detail: locationData,
       });
       window.dispatchEvent(event);
 
       // Also cache in TrackingService
       TrackingService.updateDriverLocation({
-        driver_id: validated.driver_id,
-        lat: validated.lat,
-        lng: validated.lng,
-        timestamp: validated.timestamp,
+        driver_id: locationData.driver_id,
+        lat: locationData.lat,
+        lng: locationData.lng,
+        timestamp: locationData.timestamp,
       }).catch((error) => {
         console.error('[RealtimeTracking] Error caching update:', error);
       });
