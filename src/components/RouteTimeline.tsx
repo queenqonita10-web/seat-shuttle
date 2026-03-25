@@ -1,4 +1,4 @@
-import { PickupPoint } from "@/data/mockData";
+import { PickupPoint, formatPrice } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 import { MapPin, Flag } from "lucide-react";
 
@@ -27,7 +27,6 @@ export function RouteTimeline({ pickupPoints, selectedPointId, departureTime, de
 
         return (
           <div key={point.id} className="flex gap-3">
-            {/* Timeline line + dot */}
             <div className="flex flex-col items-center">
               <div
                 className={cn(
@@ -46,10 +45,14 @@ export function RouteTimeline({ pickupPoints, selectedPointId, departureTime, de
               )}
             </div>
 
-            {/* Content */}
-            <div className={cn("pb-4 -mt-0.5", isSelected && "font-semibold")}>
-              <div className={cn("text-sm", isSelected ? "text-primary" : isPast ? "text-muted-foreground" : "text-foreground")}>
-                {point.label}
+            <div className={cn("pb-4 -mt-0.5 flex-1", isSelected && "font-semibold")}>
+              <div className="flex items-center justify-between">
+                <div className={cn("text-sm", isSelected ? "text-primary" : isPast ? "text-muted-foreground" : "text-foreground")}>
+                  {point.label}
+                </div>
+                {point.fare > 0 && (
+                  <span className="text-[10px] text-muted-foreground">{formatPrice(point.fare)}</span>
+                )}
               </div>
               <div className="text-xs text-muted-foreground">{getTime(point.timeOffset)}</div>
             </div>
@@ -57,7 +60,6 @@ export function RouteTimeline({ pickupPoints, selectedPointId, departureTime, de
         );
       })}
 
-      {/* Destination */}
       <div className="flex gap-3">
         <div className="flex flex-col items-center">
           <div className="h-4 w-4 rounded-full border-2 border-secondary bg-secondary flex items-center justify-center">
