@@ -33,7 +33,7 @@ export default function Dashboard() {
   const { data: trips = [] } = useAdminTrips();
   const { data: drivers = [] } = useAdminDrivers();
 
-  const activeTrips = trips.filter(t => t.status === "active");
+  const activeTrips = trips.filter(t => ["active", "ONGOING", "pending"].includes(t.status));
   const recentBookings = [...bookings].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
 
   const stats = [
