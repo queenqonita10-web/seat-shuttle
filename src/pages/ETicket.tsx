@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Armchair, Clock, CheckCircle, QrCode, Navigation, User, Phone } from "lucide-react";
+import { BottomNav } from "@/components/BottomNav";
 
 export default function ETicket() {
   const navigate = useNavigate();
