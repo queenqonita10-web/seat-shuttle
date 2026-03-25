@@ -22,10 +22,15 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Download,
-  Filter
+  Filter,
+  ShieldCheck,
+  History as HistoryIcon,
+  UserCheck
 } from "lucide-react";
-import { getBookingsByDay, formatPrice } from "@/data/mockData";
+import { getBookingsByDay, formatPrice, auditLogs } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const revenueData = [
   { name: "Mon", revenue: 4500000 },
@@ -50,13 +55,16 @@ export default function AdminAnalytics() {
   const bookingData = getBookingsByDay();
 
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto">
+    <div className="space-y-8 max-w-[1600px] mx-auto p-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Reports & Analytics</h2>
-          <p className="text-sm text-muted-foreground mt-1">Detailed performance metrics and trend analysis</p>
+          <h2 className="text-3xl font-black tracking-tight uppercase italic">Reports & Audit Logs</h2>
+          <p className="text-sm text-muted-foreground mt-1">Detailed performance metrics and system activity</p>
         </div>
         <div className="flex gap-3">
+          <Badge className="bg-primary/10 text-primary border-primary/20 px-3 py-1 font-black text-[10px] uppercase tracking-widest">
+            <ShieldCheck size={12} className="mr-1.5" /> Super Admin Access
+          </Badge>
           <Button variant="outline" className="font-bold">
             <Filter className="h-4 w-4 mr-2" /> Custom Range
           </Button>
@@ -66,7 +74,19 @@ export default function AdminAnalytics() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <Tabs defaultValue="analytics" className="space-y-6">
+        <TabsList className="bg-muted/50 p-1 rounded-xl">
+          <TabsTrigger value="analytics" className="rounded-lg font-bold uppercase text-[10px] tracking-widest px-6">
+            <TrendingUp size={14} className="mr-2" /> Analytics
+          </TabsTrigger>
+          <TabsTrigger value="audit" className="rounded-lg font-bold uppercase text-[10px] tracking-widest px-6">
+            <HistoryIcon size={14} className="mr-2" /> Audit Logs
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="analytics" className="space-y-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* ... (Keep existing KPI cards) */}
         <Card className="border-none shadow-sm">
           <CardContent className="p-6">
             <div className="flex justify-between items-start">
@@ -179,7 +199,63 @@ export default function AdminAnalytics() {
             </div>
           </CardContent>
         </Card>
-      </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="audit">
+          <Card className="border-none shadow-sm overflow-hidden">
+            <CardHeader className="bg-muted/30 border-b">
+              <CardTitle className="text-lg font-bold">System Activity Log</CardTitle>
+            </CardHeader>
+            <Table>
+              <TableHeader className="bg-muted/10">
+                <TableRow>
+                  <TableHead className="pl-6 font-black uppercase text-[10px] tracking-widest">Timestamp</TableHead>
+                  <TableHead className="font-black uppercase text-[10px] tracking-widest">User</TableHead>
+                  <TableHead className="font-black uppercase text-[10px] tracking-widest text-center">Action</TableHead>
+                  <TableHead className="font-black uppercase text-[10px] tracking-widest">Module</TableHead>
+                  <TableHead className="pr-6 font-black uppercase text-[10px] tracking-widest">Details</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {auditLogs.length > 0 ? (
+                  [...auditLogs].reverse().map((log) => (
+                    <TableRow key={log.id} className="hover:bg-muted/20 transition-colors">
+                      <TableCell className="pl-6 text-xs text-muted-foreground font-mono">
+                        {new Date(log.timestamp).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                            <UserCheck size={12} />
+                          </div>
+                          <span className="text-sm font-bold">{log.userId}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge className={cn(
+                          "font-black text-[10px] uppercase tracking-widest px-2",
+                          log.action === "CREATE" ? "bg-green-500" : log.action === "UPDATE" ? "bg-blue-500" : "bg-red-500"
+                        )}>
+                          {log.action}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-bold text-xs">{log.module}</TableCell>
+                      <TableCell className="pr-6 text-sm italic text-muted-foreground">{log.details}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-32 text-center text-muted-foreground italic">
+                      No system activity recorded yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

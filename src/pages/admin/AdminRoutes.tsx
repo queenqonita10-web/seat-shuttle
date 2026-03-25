@@ -1,162 +1,464 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { routes, pickupPoints, formatPrice } from "@/data/mockData";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogFooter,
+  DialogTrigger,
+  DialogDescription
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { 
+  routes as initialRoutes, 
+  formatPrice, 
+  addAuditLog,
+  Route
+} from "@/data/mockData";
 import { 
   MapPin, 
   Plus, 
-  GripVertical, 
   Edit2, 
   Trash2, 
-  ArrowRight,
+  Search,
+  Filter,
+  Download,
+  MoreVertical,
   Route as RouteIcon,
-  ChevronRight
+  ChevronRight,
+  Map,
+  ArrowRight,
+  GripVertical
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
 
 export default function AdminRoutes() {
-  const [selectedRouteId, setSelectedRouteId] = useState(routes[0]?.id);
-  const selectedRoute = routes.find(r => r.id === selectedRouteId);
+  const [routes, setRoutes] = useState<Route[]>(initialRoutes);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedRoute, setSelectedRoute] = useState<Route | null>(null);
+  
+  // Form State
+  const [formData, setFormData] = useState({
+    routeCode: "",
+    name: "",
+    origin: "",
+    destination: "",
+    distance: 0,
+    estimatedTime: "",
+    status: "active" as "active" | "inactive"
+  });
+
+  // Filtered Routes
+  const filteredRoutes = useMemo(() => {
+    return routes.filter(r => {
+      if (r.isDeleted) return false;
+      const matchesSearch = 
+        r.routeCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.origin.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.destination.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.name.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesStatus = filterStatus === "all" || r.status === filterStatus;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [routes, searchTerm, filterStatus]);
+
+  // CRUD Handlers
+  const handleCreateRoute = () => {
+    // Validation
+    if (routes.some(r => r.routeCode === formData.routeCode)) {
+      toast.error("Kode rute sudah terdaftar!");
+      return;
+    }
+
+    const newRoute: Route = {
+      ...formData,
+      id: `route-${Date.now()}`,
+      pickupPoints: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    setRoutes([...routes, newRoute]);
+    addAuditLog({
+      userId: "admin-1",
+      action: "CREATE",
+      module: "ROUTE",
+      details: `Membuat rute baru: ${newRoute.routeCode}`
+    });
+    
+    setIsCreateDialogOpen(false);
+    resetForm();
+    toast.success("Rute berhasil didaftarkan");
+  };
+
+  const handleUpdateRoute = () => {
+    if (!selectedRoute) return;
+
+    // Duplicate Code Validation (excluding current)
+    if (routes.some(r => r.routeCode === formData.routeCode && r.id !== selectedRoute.id)) {
+      toast.error("Kode rute sudah terdaftar!");
+      return;
+    }
+
+    const updatedRoutes = routes.map(r => 
+      r.id === selectedRoute.id 
+        ? { ...r, ...formData, updatedAt: new Date().toISOString() } 
+        : r
+    );
+
+    setRoutes(updatedRoutes);
+    addAuditLog({
+      userId: "admin-1",
+      action: "UPDATE",
+      module: "ROUTE",
+      details: `Memperbarui rute: ${selectedRoute.routeCode}`
+    });
+
+    setIsEditDialogOpen(false);
+    setSelectedRoute(null);
+    toast.success("Informasi rute berhasil diperbarui");
+  };
+
+  const handleDeleteRoute = () => {
+    if (!selectedRoute) return;
+
+    const updatedRoutes = routes.map(r => 
+      r.id === selectedRoute.id ? { ...r, isDeleted: true } : r
+    );
+
+    setRoutes(updatedRoutes);
+    addAuditLog({
+      userId: "admin-1",
+      action: "DELETE",
+      module: "ROUTE",
+      details: `Menghapus rute: ${selectedRoute.routeCode}`
+    });
+
+    setIsDeleteDialogOpen(false);
+    setSelectedRoute(null);
+    toast.success("Rute berhasil dihapus (Soft Delete)");
+  };
+
+  const resetForm = () => {
+    setFormData({
+      routeCode: "",
+      name: "",
+      origin: "",
+      destination: "",
+      distance: 0,
+      estimatedTime: "",
+      status: "active"
+    });
+  };
+
+  const openEditDialog = (route: Route) => {
+    setSelectedRoute(route);
+    setFormData({
+      routeCode: route.routeCode,
+      name: route.name,
+      origin: route.origin,
+      destination: route.destination,
+      distance: route.distance,
+      estimatedTime: route.estimatedTime,
+      status: route.status
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleExport = () => {
+    const csvContent = "data:text/csv;charset=utf-8," 
+      + "Code,Name,Origin,Destination,Distance,Time,Status\n"
+      + filteredRoutes.map(r => `${r.routeCode},${r.name},${r.origin},${r.destination},${r.distance},${r.estimatedTime},${r.status}`).join("\n");
+    
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `routes_export_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Data rute berhasil diekspor ke CSV");
+  };
 
   return (
-    <div className="space-y-8 max-w-[1600px] mx-auto">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 max-w-[1600px] mx-auto p-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Route & Pickup Management</h2>
-          <p className="text-sm text-muted-foreground mt-1">Configure Rayon zones and pickup sequence</p>
+          <h2 className="text-3xl font-black tracking-tight uppercase italic">Route Management</h2>
+          <p className="text-sm text-muted-foreground mt-1">Kelola rute, rayon, dan urutan titik jemput</p>
         </div>
-        <Button className="font-bold">
-          <Plus className="h-4 w-4 mr-2" /> Create New Route
-        </Button>
+        <div className="flex gap-2 w-full md:w-auto">
+          <Button variant="outline" className="font-bold" onClick={handleExport}>
+            <Download className="h-4 w-4 mr-2" /> Export
+          </Button>
+          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="font-bold bg-primary hover:bg-primary/90">
+                <Plus className="h-4 w-4 mr-2" /> Tambah Rute
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Registrasi Rute Baru</DialogTitle>
+                <DialogDescription>Masukkan detail rute operasional PYU-GO.</DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="code">Kode Rute</Label>
+                    <Input id="code" placeholder="RT-A" value={formData.routeCode} onChange={e => setFormData({...formData, routeCode: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Nama Rute (Rayon)</Label>
+                    <Input id="name" placeholder="Rayon A" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="origin">Asal</Label>
+                    <Input id="origin" placeholder="Terminal Utama" value={formData.origin} onChange={e => setFormData({...formData, origin: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="destination">Tujuan</Label>
+                    <Input id="destination" placeholder="Kota Barat" value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="distance">Jarak (KM)</Label>
+                    <Input id="distance" type="number" value={formData.distance} onChange={e => setFormData({...formData, distance: Number(e.target.value)})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="time">Estimasi Waktu</Label>
+                    <Input id="time" placeholder="1h 30m" value={formData.estimatedTime} onChange={e => setFormData({...formData, estimatedTime: e.target.value})} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={formData.status} onValueChange={(val: "active" | "inactive") => setFormData({...formData, status: val})}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Aktif</SelectItem>
+                      <SelectItem value="inactive">Non-Aktif</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Batal</Button>
+                <Button onClick={handleCreateRoute}>Simpan Rute</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      <div className="grid lg:grid-cols-12 gap-8">
-        {/* Route Selector Sidebar */}
-        <Card className="lg:col-span-3 border-none shadow-sm h-fit">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-black uppercase tracking-widest text-muted-foreground">Active Rayons</CardTitle>
-          </CardHeader>
-          <CardContent className="p-2 space-y-1">
-            {routes.map((route) => (
-              <button
-                key={route.id}
-                onClick={() => setSelectedRouteId(route.id)}
-                className={cn(
-                  "w-full flex items-center justify-between p-4 rounded-xl transition-all text-left",
-                  selectedRouteId === route.id 
-                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-[1.02]" 
-                    : "hover:bg-muted text-foreground"
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "p-2 rounded-lg",
-                    selectedRouteId === route.id ? "bg-white/20" : "bg-primary/10 text-primary"
-                  )}>
-                    <RouteIcon size={18} />
-                  </div>
-                  <div>
-                    <p className="font-bold text-sm">{route.name}</p>
-                    <p className={cn(
-                      "text-[10px] font-medium uppercase tracking-wider",
-                      selectedRouteId === route.id ? "opacity-70" : "text-muted-foreground"
-                    )}>
-                      {route.pickupPoints.length} Stops
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight size={16} className={cn(selectedRouteId === route.id ? "opacity-100" : "opacity-0")} />
-              </button>
-            ))}
-          </CardContent>
-        </Card>
+      {/* Filters & Search */}
+      <Card className="border-none shadow-sm bg-muted/20">
+        <CardContent className="p-4 flex flex-col md:flex-row gap-4">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Cari rute, asal, atau tujuan..." 
+              className="pl-10"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <SelectTrigger className="w-[150px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Status</SelectItem>
+                <SelectItem value="active">Aktif</SelectItem>
+                <SelectItem value="inactive">Non-Aktif</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
 
-        {/* Visual Route Builder */}
-        <div className="lg:col-span-9 space-y-6">
-          <Card className="border-none shadow-sm">
-            <CardHeader className="flex flex-row items-center justify-between border-b pb-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                  <MapPin size={24} />
-                </div>
-                <div>
-                  <CardTitle className="text-xl font-bold">{selectedRoute?.name} Sequence</CardTitle>
-                  <p className="text-sm text-muted-foreground mt-0.5">Destination: <span className="font-bold text-foreground">{selectedRoute?.destination}</span></p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm">
-                  <Edit2 size={14} className="mr-2" /> Edit Route Info
-                </Button>
-                <Button size="sm">
-                  <Plus size={14} className="mr-2" /> Add Stop
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="p-6 bg-muted/20">
-                <div className="flex items-center gap-2 overflow-x-auto pb-4 scrollbar-hide">
-                  {selectedRoute?.pickupPoints.map((point, idx) => (
-                    <div key={point.id} className="flex items-center shrink-0">
-                      <div className="bg-white border-2 border-primary/20 rounded-2xl p-4 shadow-sm hover:border-primary transition-colors cursor-pointer group relative">
-                        <div className="absolute -top-2 -left-2 h-6 w-6 bg-primary text-white rounded-full flex items-center justify-center text-[10px] font-black">
-                          {idx + 1}
-                        </div>
-                        <p className="font-black text-primary text-xs mb-1">{point.id}</p>
-                        <p className="font-bold text-sm whitespace-nowrap">{point.label.split(' - ')[1] || point.label}</p>
-                        <p className="text-[10px] text-muted-foreground mt-1">+{point.timeOffset} mins</p>
-                      </div>
-                      {idx < selectedRoute.pickupPoints.length - 1 && (
-                        <div className="px-2">
-                          <ArrowRight size={16} className="text-muted-foreground/30" />
-                        </div>
-                      )}
+      {/* Routes Table */}
+      <Card className="border-none shadow-sm overflow-hidden">
+        <Table>
+          <TableHeader className="bg-muted/50">
+            <TableRow>
+              <TableHead className="font-black uppercase text-[10px] tracking-widest pl-6">Kode</TableHead>
+              <TableHead className="font-black uppercase text-[10px] tracking-widest">Rayon / Rute</TableHead>
+              <TableHead className="font-black uppercase text-[10px] tracking-widest">Asal → Tujuan</TableHead>
+              <TableHead className="font-black uppercase text-[10px] tracking-widest">Jarak & Waktu</TableHead>
+              <TableHead className="font-black uppercase text-[10px] tracking-widest text-center">Status</TableHead>
+              <TableHead className="font-black uppercase text-[10px] tracking-widest pr-6 text-right">Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredRoutes.length > 0 ? (
+              filteredRoutes.map((route) => (
+                <TableRow key={route.id} className="group">
+                  <TableCell className="pl-6 font-bold text-primary">{route.routeCode}</TableCell>
+                  <TableCell>
+                    <div className="font-bold">{route.name}</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wider">{route.pickupPoints.length} Titik Jemput</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2 font-medium">
+                      <span>{route.origin}</span>
+                      <ChevronRight size={14} className="text-muted-foreground" />
+                      <span>{route.destination}</span>
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm font-bold">{route.distance} KM</div>
+                    <div className="text-xs text-muted-foreground">{route.estimatedTime}</div>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Badge className={cn(
+                      "font-black text-[10px] uppercase tracking-widest px-2",
+                      route.status === "active" ? "bg-green-500 hover:bg-green-600" : "bg-zinc-500"
+                    )}>
+                      {route.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="pr-6 text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(route)}>
+                        <Edit2 size={14} />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
+                        onClick={() => {
+                          setSelectedRoute(route);
+                          setIsDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 size={14} />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                  Tidak ada rute yang ditemukan.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Card>
 
-              <Table>
-                <TableHeader className="bg-muted/30">
-                  <TableRow>
-                    <TableHead className="w-[50px]"></TableHead>
-                    <TableHead className="pl-6 uppercase text-[10px] font-black tracking-widest">Code</TableHead>
-                    <TableHead className="uppercase text-[10px] font-black tracking-widest">Pickup Point Name</TableHead>
-                    <TableHead className="uppercase text-[10px] font-black tracking-widest">Time Offset</TableHead>
-                    <TableHead className="text-right uppercase text-[10px] font-black tracking-widest">Base Fare</TableHead>
-                    <TableHead className="pr-6 text-right uppercase text-[10px] font-black tracking-widest">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {selectedRoute?.pickupPoints.map((point) => (
-                    <TableRow key={point.id} className="group hover:bg-muted/30 transition-colors">
-                      <TableCell className="text-center cursor-grab active:cursor-grabbing">
-                        <GripVertical size={16} className="text-muted-foreground/30 group-hover:text-muted-foreground transition-colors" />
-                      </TableCell>
-                      <TableCell className="pl-6 font-black text-primary">{point.id}</TableCell>
-                      <TableCell className="font-bold">{point.label.split(' - ')[1] || point.label}</TableCell>
-                      <TableCell className="text-muted-foreground">+{point.timeOffset} mins</TableCell>
-                      <TableCell className="text-right font-bold">{formatPrice(point.fare || 0)}</TableCell>
-                      <TableCell className="pr-6 text-right">
-                        <div className="flex justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <Edit2 size={14} />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50">
-                            <Trash2 size={14} />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Informasi Rute</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-code">Kode Rute</Label>
+                <Input id="edit-code" value={formData.routeCode} onChange={e => setFormData({...formData, routeCode: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-name">Nama Rute</Label>
+                <Input id="edit-name" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-origin">Asal</Label>
+                <Input id="edit-origin" value={formData.origin} onChange={e => setFormData({...formData, origin: e.target.value})} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-destination">Tujuan</Label>
+                <Input id="edit-destination" value={formData.destination} onChange={e => setFormData({...formData, destination: e.target.value})} />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-distance">Jarak (KM)</Label>
+                <Input id="edit-distance" type="number" value={formData.distance} onChange={e => setFormData({...formData, distance: Number(e.target.value)})} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-time">Estimasi Waktu</Label>
+                <Input id="edit-time" value={formData.estimatedTime} onChange={e => setFormData({...formData, estimatedTime: e.target.value})} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select value={formData.status} onValueChange={(val: "active" | "inactive") => setFormData({...formData, status: val})}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Aktif</SelectItem>
+                  <SelectItem value="inactive">Non-Aktif</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>Batal</Button>
+            <Button onClick={handleUpdateRoute}>Simpan Perubahan</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Konfirmasi Penghapusan</DialogTitle>
+            <DialogDescription>
+              Apakah Anda yakin ingin menghapus rute <span className="font-bold text-foreground">{selectedRoute?.routeCode}</span>? 
+              Data ini akan disembunyikan dari sistem namun tetap tersimpan di database.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Batal</Button>
+            <Button variant="destructive" onClick={handleDeleteRoute}>Hapus Rute</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+}

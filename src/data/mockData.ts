@@ -15,10 +15,87 @@ export interface VehicleType {
 
 export interface Route {
   id: string;
+  routeCode: string;
   name: string;
-  pickupPoints: PickupPoint[];
+  origin: string;
   destination: string;
+  distance: number; // in km
+  estimatedTime: string; // e.g. "2h 30m"
+  status: "active" | "inactive";
+  pickupPoints: PickupPoint[];
+  isDeleted?: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
+
+export interface Vehicle {
+  id: string;
+  vehicleTypeId: string;
+  brand: string;
+  model: string;
+  year: number;
+  color: string;
+  licensePlate: string;
+  status: "active" | "maintenance" | "inactive";
+  assignedRouteId?: string;
+  isDeleted?: boolean;
+  createdAt: string;
+  updatedAt: string;
+  history?: {
+    field: string;
+    oldValue: string;
+    newValue: string;
+    date: string;
+  }[];
+}
+
+export interface AuditLog {
+  id: string;
+  userId: string;
+  action: "CREATE" | "UPDATE" | "DELETE";
+  module: "ROUTE" | "VEHICLE" | "TRIP" | "BOOKING";
+  details: string;
+  timestamp: string;
+}
+
+export const auditLogs: AuditLog[] = [];
+
+export function addAuditLog(log: Omit<AuditLog, "id" | "timestamp">) {
+  auditLogs.push({
+    ...log,
+    id: `LOG-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+export const vehicles: Vehicle[] = [
+  {
+    id: "V-001",
+    vehicleTypeId: "hiace-10",
+    brand: "Toyota",
+    model: "Hiace Premio",
+    year: 2022,
+    color: "White",
+    licensePlate: "B 1234 ABC",
+    status: "active",
+    assignedRouteId: "rayon-a",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "V-002",
+    vehicleTypeId: "minibus-5",
+    brand: "Isuzu",
+    model: "Elf Giga",
+    year: 2021,
+    color: "Silver",
+    licensePlate: "D 5678 XYZ",
+    status: "active",
+    assignedRouteId: "rayon-b",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
 
 export interface Seat {
   id: string;
@@ -174,10 +251,58 @@ const rayonDPoints: PickupPoint[] = [
 ];
 
 export const routes: Route[] = [
-  { id: "rayon-a", name: "Rayon A", pickupPoints: rayonAPoints, destination: "Kota Barat" },
-  { id: "rayon-b", name: "Rayon B", pickupPoints: rayonBPoints, destination: "Kota Timur" },
-  { id: "rayon-c", name: "Rayon C", pickupPoints: rayonCPoints, destination: "Kota Selatan" },
-  { id: "rayon-d", name: "Rayon D", pickupPoints: rayonDPoints, destination: "Kota Utara" },
+  { 
+    id: "rayon-a", 
+    routeCode: "RT-A",
+    name: "Rayon A", 
+    origin: "Terminal Utama",
+    destination: "Kota Barat", 
+    distance: 45,
+    estimatedTime: "1h 30m",
+    status: "active",
+    pickupPoints: rayonAPoints,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  { 
+    id: "rayon-b", 
+    routeCode: "RT-B",
+    name: "Rayon B", 
+    origin: "Terminal Utama",
+    destination: "Kota Timur", 
+    distance: 52,
+    estimatedTime: "1h 45m",
+    status: "active",
+    pickupPoints: rayonBPoints,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  { 
+    id: "rayon-c", 
+    routeCode: "RT-C",
+    name: "Rayon C", 
+    origin: "Terminal Utama",
+    destination: "Kota Selatan", 
+    distance: 38,
+    estimatedTime: "1h 15m",
+    status: "active",
+    pickupPoints: rayonCPoints,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  { 
+    id: "rayon-d", 
+    routeCode: "RT-D",
+    name: "Rayon D", 
+    origin: "Terminal Utama",
+    destination: "Kota Utara", 
+    distance: 60,
+    estimatedTime: "2h 00m",
+    status: "active",
+    pickupPoints: rayonDPoints,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
 ];
 
 // All unique pickup points across routes for the Home page selector
