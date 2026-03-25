@@ -16,7 +16,7 @@ interface TripFilters {
 interface TripWithRelations extends Trip {
   routes?: { id: string; name: string } | null;
   vehicles?: { id: string; brand: string; model: string } | null;
-  drivers?: { id: string; name: string; phone: string; status: string } | null;
+  drivers?: { id: string; name: string; phone: string; status?: string } | null;
 }
 
 export function useAdminTrips(filters?: TripFilters) {
@@ -81,7 +81,7 @@ export function useAdminTripCreate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (tripData: Omit<Trip, "id" | "created_at" | "updated_at">) => {
+    mutationFn: async (tripData: Omit<Trip, "created_at" | "updated_at">) => {
       const { data, error } = await supabase
         .from("trips")
         .insert([tripData])

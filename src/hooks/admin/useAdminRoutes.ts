@@ -47,7 +47,7 @@ export function useAdminRouteCreate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (routeData: Omit<Route, "id" | "created_at">) => {
+    mutationFn: async (routeData: Omit<Route, "created_at">) => {
       const { data, error } = await supabase
         .from("routes")
         .insert([routeData])

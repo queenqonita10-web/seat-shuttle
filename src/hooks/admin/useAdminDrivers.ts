@@ -49,7 +49,7 @@ export function useAdminDriverCreate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (driverData: Omit<Driver, "id" | "created_at" | "updated_at">) => {
+    mutationFn: async (driverData: Omit<Driver, "created_at" | "updated_at">) => {
       const { data, error } = await supabase
         .from("drivers")
         .insert([driverData])
