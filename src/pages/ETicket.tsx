@@ -4,7 +4,7 @@ import { pickupPoints, routes, formatPrice, getPickupTime, trips } from "@/data/
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Armchair, Clock, CheckCircle, QrCode, Navigation } from "lucide-react";
+import { MapPin, Armchair, Clock, CheckCircle, QrCode, Navigation, User, Phone } from "lucide-react";
 
 export default function ETicket() {
   const navigate = useNavigate();
@@ -51,6 +51,20 @@ export default function ETicket() {
 
             {/* Details */}
             <div className="space-y-3 pt-2">
+              <div className="flex items-center gap-3">
+                <User size={16} className="text-primary" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Penumpang</p>
+                  <p className="text-sm font-medium">{booking.passengerName}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Phone size={16} className="text-primary" />
+                <div>
+                  <p className="text-xs text-muted-foreground">No. Telepon</p>
+                  <p className="text-sm font-medium">{booking.passengerPhone}</p>
+                </div>
+              </div>
               {route && (
                 <div className="flex items-center gap-3">
                   <Navigation size={16} className="text-primary" />

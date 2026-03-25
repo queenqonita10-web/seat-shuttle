@@ -42,6 +42,7 @@ export interface Booking {
   seatNumber: string;
   pickupPointId: string;
   passengerName: string;
+  passengerPhone: string;
   paymentMethod: string;
   paymentStatus: "pending" | "paid";
   createdAt: string;
@@ -265,6 +266,7 @@ export const mockBookings: Booking[] = Array.from({ length: 15 }, (_, i) => {
     seatNumber: seat?.number ?? "1",
     pickupPointId: pickup.id,
     passengerName: passengerNames[i],
+    passengerPhone: `08${String(1200000000 + i * 11111111).slice(0, 10)}`,
     paymentMethod: i % 3 === 0 ? "Cash" : i % 3 === 1 ? "Transfer" : "QRIS",
     paymentStatus: i % 4 === 0 ? "pending" : "paid",
     createdAt: date.toISOString(),
