@@ -240,3 +240,66 @@ export function getSeatPosition(seat: Seat, vehicleTypeId: string): string {
   if (idx === seatCols.length - 1) return "Window";
   return "Aisle";
 }
+
+// ─── Mock Bookings ───
+
+const passengerNames = [
+  "Ahmad Fauzi", "Siti Nurhaliza", "Budi Santoso", "Dewi Lestari", "Rizki Pratama",
+  "Anisa Rahma", "Dian Kusuma", "Fajar Hidayat", "Lina Marlina", "Hendra Wijaya",
+  "Putri Ayu", "Rafi Gunawan", "Maya Sari", "Eko Prasetyo", "Nadia Safitri",
+];
+
+export const mockBookings: Booking[] = Array.from({ length: 15 }, (_, i) => {
+  const trip = trips[i % trips.length];
+  const route = routes.find(r => r.id === trip.routeId)!;
+  const pickup = route.pickupPoints[Math.floor(Math.random() * route.pickupPoints.length)];
+  const availableSeats = trip.seats.filter(s => s.status === "available");
+  const seat = availableSeats[i % Math.max(availableSeats.length, 1)] ?? trip.seats[0];
+  const daysAgo = Math.floor(i / 3);
+  const date = new Date();
+  date.setDate(date.getDate() - daysAgo);
+
+  return {
+    id: `BK-${String(1000 + i)}`,
+    tripId: trip.id,
+    seatNumber: seat?.number ?? "1",
+    pickupPointId: pickup.id,
+    passengerName: passengerNames[i],
+    paymentMethod: i % 3 === 0 ? "Cash" : i % 3 === 1 ? "Transfer" : "QRIS",
+    paymentStatus: i % 4 === 0 ? "pending" : "paid",
+    createdAt: date.toISOString(),
+  };
+});
+
+export function getAllBookings(): Booking[] {
+  return mockBookings;
+}
+
+export function getRevenueByRoute(): { route: string; revenue: number }[] {
+  return routes.map(route => {
+    const routeTrips = trips.filter(t => t.routeId === route.id);
+    const bookings = mockBookings.filter(b => routeTrips.some(t => t.id === b.tripId));
+    const revenue = bookings.reduce((sum, b) => {
+      const trip = routeTrips.find(t => t.id === b.tripId)!;
+      const r = routes.find(rt => rt.id === trip.routeId)!;
+      const fare = getFareForPickup(r, b.pickupPointId);
+      return sum + fare;
+    }, 0);
+    return { route: route.name, revenue };
+  });
+}
+
+export function getBookingsByDay(): { day: string; bookings: number }[] {
+  const days: { day: string; bookings: number }[] = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dayStr = d.toLocaleDateString("id-ID", { weekday: "short" });
+    const count = mockBookings.filter(b => {
+      const bd = new Date(b.createdAt);
+      return bd.toDateString() === d.toDateString();
+    }).length;
+    days.push({ day: dayStr, bookings: count });
+  }
+  return days;
+}

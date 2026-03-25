@@ -12,6 +12,13 @@ import Checkout from "./pages/Checkout.tsx";
 import ETicket from "./pages/ETicket.tsx";
 import DriverTracking from "./pages/DriverTracking.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import AdminLayout from "./pages/admin/AdminLayout.tsx";
+import Dashboard from "./pages/admin/Dashboard.tsx";
+import AdminBookings from "./pages/admin/AdminBookings.tsx";
+import AdminTrips from "./pages/admin/AdminTrips.tsx";
+import AdminRoutes from "./pages/admin/AdminRoutes.tsx";
+import AdminVehicles from "./pages/admin/AdminVehicles.tsx";
+import AdminAnalytics from "./pages/admin/AdminAnalytics.tsx";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +37,14 @@ const App = () => (
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/eticket" element={<ETicket />} />
             <Route path="/tracking" element={<DriverTracking />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="bookings" element={<AdminBookings />} />
+              <Route path="trips" element={<AdminTrips />} />
+              <Route path="routes" element={<AdminRoutes />} />
+              <Route path="vehicles" element={<AdminVehicles />} />
+              <Route path="analytics" element={<AdminAnalytics />} />
+            </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
