@@ -1,36 +1,37 @@
 
 
-# Tambah Biodata Pemesan di Checkout (Tanpa Akun)
+# Fix Build Errors & Ensure /track Works
 
-## Ringkasan
-Pemesanan tiket tidak memerlukan akun/login. Sebagai gantinya, tambahkan form biodata penumpang (nama lengkap, no telepon) di halaman Checkout sebelum memilih metode pembayaran. Data ini disimpan di booking dan ditampilkan di e-ticket.
+The `/track` driver tracking page is already fully implemented with the SVG map, timeline, ETA countdown, driver info, and action buttons. However, there are **13 build errors** across multiple files that prevent the app from running. These need to be fixed first.
 
-## Perubahan
+## Build Error Fixes
 
-### 1. Update `Booking` interface (`mockData.ts`)
-- Tambah field `passengerPhone: string` pada interface `Booking`
+### 1. `src/data/mockData.ts` — Add missing `capacity` to vehicleTypes (lines 301, 310, 320)
+Three vehicle type entries are missing the required `capacity` field. Add `capacity` based on seat count in each layout.
 
-### 2. Update `BookingContext.tsx`
-- Tambah `passengerName` dan `passengerPhone` ke `BookingState`
-- Tambah setter: `setPassengerName`, `setPassengerPhone`
+### 2. `src/pages/Checkout.tsx` — Add missing `status` field (line 44)
+The booking object created in `handlePay` is missing `status: "pending"`. Add it.
 
-### 3. Update `Checkout.tsx`
-- Tambah card "Data Penumpang" di atas Booking Summary dengan:
-  - Input **Nama Lengkap** (required, max 100 karakter)
-  - Input **No. Telepon** (required, format Indonesia, max 15 digit)
-- Validasi: tombol "Pay Now" disabled jika nama atau telepon kosong
-- Simpan nama & telepon ke booking saat bayar
+### 3. `src/pages/admin/AdminAnalytics.tsx` — Missing imports (lines 55, 58, 234, 235, 280)
+Add `useState`, `useMemo` from React, `Search` from lucide-react, `Input` from UI components, and `cn` from utils.
 
-### 4. Update `ETicket.tsx`
-- Tampilkan nama penumpang dan no. telepon di detail tiket (icon User dan Phone)
+### 4. `src/pages/admin/AdminTrips.tsx` — `isBooked` doesn't exist on `Seat` (line 107)
+The `Seat` interface uses `status: "available" | "booked"`, not `isBooked`. Fix to `s.status === "booked"`.
 
-### 5. Update `AdminBookings.tsx`
-- Tampilkan kolom telepon di tabel bookings dan detail dialog
+### 5. `src/pages/admin/AdminTrips.tsx` — `name` doesn't exist on `Vehicle` (line 143)
+`Vehicle` interface has `brand`/`model`, not `name`. The code should look up `VehicleType` instead, or use `vehicle?.brand`.
 
-## File yang Diubah
-- `src/data/mockData.ts` — tambah `passengerPhone` di interface & mock data
-- `src/context/BookingContext.tsx` — tambah state nama & telepon
-- `src/pages/Checkout.tsx` — form biodata penumpang
-- `src/pages/ETicket.tsx` — tampilkan biodata di tiket
-- `src/pages/admin/AdminBookings.tsx` — kolom telepon
+### 6. `src/pages/admin/AdminVehicles.tsx` — `Clock` not imported (line 531)
+Add `Clock` to the lucide-react imports.
+
+### 7. `src/pages/driver/DriverPickupDetail.tsx` — `AlertTriangle` not imported (line 375)
+Add `AlertTriangle` to the lucide-react imports.
+
+## Files Modified
+- `src/data/mockData.ts` — add `capacity` to 3 vehicle entries
+- `src/pages/Checkout.tsx` — add `status` field
+- `src/pages/admin/AdminAnalytics.tsx` — add missing imports
+- `src/pages/admin/AdminTrips.tsx` — fix `isBooked` and `name` references
+- `src/pages/admin/AdminVehicles.tsx` — add `Clock` import
+- `src/pages/driver/DriverPickupDetail.tsx` — add `AlertTriangle` import
 
