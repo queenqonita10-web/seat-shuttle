@@ -25,8 +25,12 @@ import {
   Filter,
   ShieldCheck,
   History as HistoryIcon,
-  UserCheck
+  UserCheck,
+  Search
 } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 import { getBookingsByDay, formatPrice, auditLogs } from "@/data/mockData";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";

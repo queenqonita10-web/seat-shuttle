@@ -50,6 +50,7 @@ export default function Checkout() {
         passengerPhone: passengerPhone.trim(),
         paymentMethod: selectedPayment,
         paymentStatus: "paid",
+        status: "pending",
         createdAt: new Date().toISOString(),
       });
       navigate("/eticket");

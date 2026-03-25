@@ -8,7 +8,7 @@ import {
   ArrowLeft, CheckCircle2, QrCode, UserMinus, UserCheck, 
   XCircle, Navigation, Phone, Clock, AlertCircle, RefreshCw,
   Coffee, Luggage, MessageSquare, Brain, ShieldAlert,
-  Camera, Hash, UserPlus, Info, Settings
+  Camera, Hash, UserPlus, Info, Settings, AlertTriangle
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/components/ui/use-toast";

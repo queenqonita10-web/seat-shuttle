@@ -104,7 +104,7 @@ export default function AdminTrips() {
                 const route = routes.find(r => r.id === trip.routeId);
                 const driver = drivers.find(d => d.id === trip.driverId);
                 const vehicle = vehicles.find(v => v.id === trip.vehicleTypeId);
-                const occupiedSeats = trip.seats.filter(s => s.isBooked).length;
+                const occupiedSeats = trip.seats.filter(s => s.status === "booked").length;
                 const totalSeats = trip.seats.length;
                 const occupancyRate = Math.round((occupiedSeats / totalSeats) * 100);
 
@@ -140,7 +140,7 @@ export default function AdminTrips() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <span className="text-xs font-medium text-muted-foreground">{vehicle?.name}</span>
+                      <span className="text-xs font-medium text-muted-foreground">{vehicle ? `${vehicle.brand} ${vehicle.model}` : "—"}</span>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col gap-1 w-24">
