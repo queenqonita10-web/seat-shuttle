@@ -25,15 +25,39 @@ import {
   HelpCircle
 } from "lucide-react";
 import { userTickets, routes, drivers, formatPrice } from "@/data/mockData";
+import { TrackingService, LocationUpdate } from "@/services/trackingService";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 export default function TicketDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const ticket = userTickets.find(t => t.id === id);
+  const [ticket, setTicket] = useState(userTickets.find(t => t.id === id));
+  const [driverLocation, setDriverLocation] = useState<LocationUpdate | null>(null);
+  
   const route = routes.find(r => r.id === ticket?.routeId);
   const driver = drivers.find(d => d.id === "driver-1"); // Mock driver for tracking
+
+  // Polling for real-time tracking
+  useEffect(() => {
+    if (!ticket || ticket.status !== "active" || !driver) return;
+
+    const pollTracking = async () => {
+      try {
+        const location = await TrackingService.getLastKnownLocation(driver.id);
+        if (location) {
+          setDriverLocation(location);
+        }
+      } catch (error) {
+        console.error("Failed to fetch tracking data", error);
+      }
+    };
+
+    pollTracking(); // Initial fetch
+    const interval = setInterval(pollTracking, 5000); // Poll every 5 seconds
+
+    return () => clearInterval(interval);
+  }, [ticket, driver]);
 
   if (!ticket) {
     return (
@@ -125,12 +149,16 @@ export default function TicketDetail() {
               <div className="flex items-center gap-6">
                 <div className="flex flex-col">
                   <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1 italic">Speed</span>
-                  <span className="text-xl font-black italic tracking-tighter">42 <span className="text-[10px] uppercase">km/h</span></span>
+                  <span className="text-xl font-black italic tracking-tighter">
+                    {driverLocation ? Math.floor(Math.random() * 20 + 30) : 0} <span className="text-[10px] uppercase">km/h</span>
+                  </span>
                 </div>
                 <div className="h-8 w-px bg-white/10" />
                 <div className="flex flex-col">
-                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1 italic">Distance</span>
-                  <span className="text-xl font-black italic tracking-tighter">1.4 <span className="text-[10px] uppercase">km</span></span>
+                  <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500 mb-1 italic">Last Update</span>
+                  <span className="text-sm font-black italic tracking-tighter">
+                    {driverLocation ? new Date(driverLocation.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : "N/A"}
+                  </span>
                 </div>
               </div>
               <Button className="bg-white text-zinc-900 hover:bg-zinc-200 rounded-2xl font-black uppercase tracking-widest text-[10px] h-12 px-8">View Map</Button>

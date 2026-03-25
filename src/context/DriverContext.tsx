@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { Trip, Booking, getBookingsForTrip } from "@/data/mockData";
+import { TrackingService } from "@/services/trackingService";
 
 export type TrafficLevel = "low" | "medium" | "high" | "rush_hour";
 export type Weather = "clear" | "rain" | "fog" | "storm";
@@ -48,6 +49,7 @@ interface DriverState {
   locationVerified: boolean;
   scheduleDeviation: number; // in minutes (positive for late, negative for early)
   waitLimit: number; // in minutes (configurable 5-15)
+  currentLocation: { lat: number; lng: number; lastUpdate: string } | null;
 }
 
 interface DriverType extends DriverState {
@@ -69,6 +71,7 @@ interface DriverType extends DriverState {
   setLocationVerified: (verified: boolean) => void;
   setScheduleDeviation: (deviation: number) => void;
   setWaitLimit: (limit: number) => void;
+  updateLocation: (lat: number, lng: number) => void;
   nextStop: () => void;
   prevStop: () => void;
   reset: () => void;
@@ -104,6 +107,7 @@ export function DriverProvider({ children }: { children: ReactNode }) {
   const [locationVerified, setLocationVerified] = useState(false);
   const [scheduleDeviation, setScheduleDeviation] = useState(0);
   const [waitLimit, setWaitLimit] = useState(5);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number; lastUpdate: string } | null>(null);
 
   // Fatigue & Stress simulation over time
   useEffect(() => {
@@ -120,6 +124,25 @@ export function DriverProvider({ children }: { children: ReactNode }) {
 
     return () => clearInterval(timer);
   }, [activeTrip, trafficLevel, activeEvents, difficulty]);
+
+  // Real-time Location Simulation
+  useEffect(() => {
+    if (!activeTrip || !isDrivingMode) return;
+
+    // Start with a base location (Jakarta area)
+    let lat = -6.2088;
+    let lng = 106.8456;
+
+    const moveInterval = setInterval(() => {
+      // Simulate small movement
+      lat += (Math.random() - 0.5) * 0.001;
+      lng += (Math.random() - 0.5) * 0.001;
+      
+      updateLocation(lat, lng);
+    }, 5000); // Update every 5 seconds
+
+    return () => clearInterval(moveInterval);
+  }, [activeTrip, isDrivingMode]);
 
   const playFeedback = (type: "success" | "error" | "action") => {
     console.log(`[Audio Feedback] ${type}`);
@@ -175,6 +198,25 @@ export function DriverProvider({ children }: { children: ReactNode }) {
     setIncidentReports((prev) => [...prev, report]);
   };
 
+  const updateLocation = async (lat: number, lng: number) => {
+    const timestamp = new Date().toISOString();
+    const update = { lat, lng, lastUpdate: timestamp };
+    setCurrentLocation(update);
+    
+    if (activeTrip) {
+      try {
+        await TrackingService.updateDriverLocation({
+          driver_id: activeTrip.driverId || "driver-unknown",
+          lat,
+          lng,
+          timestamp,
+        });
+      } catch (error) {
+        console.error("[Tracking Error]", error);
+      }
+    }
+  };
+
   const nextStop = () => {
     setCurrentStopIndex((prev) => prev + 1);
     playFeedback("action");
@@ -220,6 +262,7 @@ export function DriverProvider({ children }: { children: ReactNode }) {
         locationVerified,
         scheduleDeviation,
         waitLimit,
+        currentLocation,
         setActiveTrip,
         setCurrentStopIndex,
         updateBookingStatus,
@@ -236,6 +279,7 @@ export function DriverProvider({ children }: { children: ReactNode }) {
         setLocationVerified,
         setScheduleDeviation,
         setWaitLimit,
+        updateLocation,
         nextStop,
         prevStop,
         reset,
