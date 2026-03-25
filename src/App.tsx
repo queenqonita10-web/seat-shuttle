@@ -13,6 +13,9 @@ import PickupRoute from "./pages/PickupRoute.tsx";
 import Checkout from "./pages/Checkout.tsx";
 import ETicket from "./pages/ETicket.tsx";
 import DriverTracking from "./pages/DriverTracking.tsx";
+import Profile from "./pages/Profile.tsx";
+import Tickets from "./pages/Tickets.tsx";
+import TicketDetail from "./pages/TicketDetail.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 import AdminLayout from "./pages/admin/AdminLayout.tsx";
@@ -51,6 +54,9 @@ const App = () => (
               <Route path="/seats" element={<SeatSelection />} />
               <Route path="/route" element={<PickupRoute />} />
               <Route path="/checkout" element={<Checkout />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/tickets" element={<Tickets />} />
+              <Route path="/ticket/:id" element={<TicketDetail />} />
               <Route path="/eticket" element={<ETicket />} />
               <Route path="/tracking" element={<DriverTracking />} />
 

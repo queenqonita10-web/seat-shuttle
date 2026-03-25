@@ -97,6 +97,111 @@ export interface Vehicle {
   }[];
 }
 
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  avatar?: string;
+  address?: string;
+  memberSince: string;
+  totalTrips: number;
+  loyaltyPoints: number;
+}
+
+export const currentUser: UserProfile = {
+  id: "user-123",
+  name: "Budi Pratama",
+  email: "budi.pratama@email.com",
+  phone: "081234567890",
+  avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Budi",
+  address: "Jl. Merdeka No. 123, Jakarta Selatan",
+  memberSince: "2024-01-15T08:00:00Z",
+  totalTrips: 24,
+  loyaltyPoints: 1250,
+};
+
+export interface Ticket {
+  id: string;
+  bookingId: string;
+  tripId: string;
+  routeId: string;
+  seatNumber: string;
+  departureDate: string;
+  departureTime: string;
+  pickupPointId: string;
+  status: "active" | "completed" | "cancelled";
+  trackingStatus: "scheduled" | "driver_assigned" | "en_route" | "arrived_at_pickup" | "picked_up" | "arrived_at_destination";
+  currentLocation?: {
+    lat: number;
+    lng: number;
+    lastUpdate: string;
+  };
+  history: {
+    status: string;
+    timestamp: string;
+    description: string;
+  }[];
+}
+
+export const userTickets: Ticket[] = [
+  {
+    id: "TKT-9901",
+    bookingId: "BK-1001",
+    tripId: "trip-1",
+    routeId: "rayon-a",
+    seatNumber: "4",
+    departureDate: new Date().toISOString().split('T')[0],
+    departureTime: "06:00",
+    pickupPointId: "J2",
+    status: "active",
+    trackingStatus: "en_route",
+    currentLocation: {
+      lat: -6.2,
+      lng: 106.8,
+      lastUpdate: new Date().toISOString(),
+    },
+    history: [
+      { status: "scheduled", timestamp: "2026-03-24T10:00:00Z", description: "Tiket berhasil dipesan" },
+      { status: "driver_assigned", timestamp: "2026-03-25T05:30:00Z", description: "Driver Budi Santoso telah ditugaskan" },
+      { status: "en_route", timestamp: "2026-03-25T05:45:00Z", description: "Kendaraan sedang menuju titik jemput" },
+    ]
+  },
+  {
+    id: "TKT-8802",
+    bookingId: "BK-1005",
+    tripId: "trip-6",
+    routeId: "rayon-c",
+    seatNumber: "7",
+    departureDate: "2026-03-20",
+    departureTime: "07:00",
+    pickupPointId: "J10",
+    status: "completed",
+    trackingStatus: "arrived_at_destination",
+    history: [
+      { status: "scheduled", timestamp: "2026-03-19T14:00:00Z", description: "Tiket berhasil dipesan" },
+      { status: "picked_up", timestamp: "2026-03-20T07:15:00Z", description: "Penumpang telah dijemput" },
+      { status: "arrived_at_destination", timestamp: "2026-03-20T08:30:00Z", description: "Perjalanan selesai" },
+    ]
+  },
+  {
+    id: "TKT-7703",
+    bookingId: "BK-1010",
+    tripId: "trip-10",
+    routeId: "rayon-d",
+    seatNumber: "2",
+    departureDate: "2026-03-22",
+    departureTime: "11:00",
+    pickupPointId: "J5",
+    status: "cancelled",
+    trackingStatus: "scheduled",
+    history: [
+      { status: "scheduled", timestamp: "2026-03-21T09:00:00Z", description: "Tiket berhasil dipesan" },
+      { status: "cancelled", timestamp: "2026-03-21T20:00:00Z", description: "Tiket dibatalkan oleh pengguna" },
+    ]
+  }
+];
+
 export interface AuditLog {
   id: string;
   userId: string;
