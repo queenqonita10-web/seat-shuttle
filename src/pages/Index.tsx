@@ -1,16 +1,147 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useBooking } from "@/context/BookingContext";
+import { pickupPoints, destinations } from "@/data/mockData";
+import { BottomNav } from "@/components/BottomNav";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { Bus, CalendarIcon, MapPin, Navigation, Search } from "lucide-react";
 
-// IMPORTANT: Fully REPLACE this with your own code
-const PlaceholderIndex = () => {
-  // PLACEHOLDER: Replace this entire return statement with the user's app.
-  // The inline background color is intentionally not part of the design system.
+const Index = () => {
+  const navigate = useNavigate();
+  const { setPickupPoint, setDestination, setDate, pickupPoint, destination, date } = useBooking();
+
+  const handleSearch = () => {
+    if (!pickupPoint || !destination || !date) return;
+    navigate("/search");
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center" style={{ backgroundColor: '#fcfbf8' }}>
-      <img data-lovable-blank-page-placeholder="REMOVE_THIS" src="/placeholder.svg" alt="Your app will live here!" />
+    <div className="min-h-screen pb-20 bg-background">
+      {/* Hero */}
+      <div className="bg-primary px-5 pb-10 pt-12 text-primary-foreground">
+        <div className="mx-auto max-w-md">
+          <div className="mb-1 flex items-center gap-2">
+            <Bus size={28} />
+            <h1 className="text-xl font-bold tracking-tight">ShuttleGo</h1>
+          </div>
+          <p className="text-sm text-primary-foreground/80">Book your shuttle ride in seconds</p>
+        </div>
+      </div>
+
+      {/* Search Card */}
+      <div className="mx-auto max-w-md px-5 -mt-6">
+        <Card className="shadow-lg border-0 animate-fade-up">
+          <CardContent className="p-5 space-y-4">
+            {/* Pickup Point */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <MapPin size={12} />
+                Pickup Point
+              </label>
+              <Select
+                value={pickupPoint?.id ?? ""}
+                onValueChange={(val) => setPickupPoint(pickupPoints.find((p) => p.id === val) ?? null)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select pickup point" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pickupPoints.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Destination */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <Navigation size={12} />
+                Destination
+              </label>
+              <Select value={destination} onValueChange={setDestination}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Where are you going?" />
+                </SelectTrigger>
+                <SelectContent>
+                  {destinations.map((d) => (
+                    <SelectItem key={d} value={d}>
+                      {d}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Date */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                <CalendarIcon size={12} />
+                Travel Date
+              </label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("w-full justify-start text-left font-normal", !date && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date ? format(date, "PPP") : "Pick a date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={date ?? undefined}
+                    onSelect={(d) => setDate(d ?? null)}
+                    disabled={(d) => d < new Date(new Date().setHours(0, 0, 0, 0))}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* CTA */}
+            <Button
+              onClick={handleSearch}
+              className="w-full h-12 text-base font-semibold gap-2"
+              disabled={!pickupPoint || !destination || !date}
+            >
+              <Search size={18} />
+              Search Tickets
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Quick info */}
+        <div className="mt-6 grid grid-cols-3 gap-3">
+          {[
+            { icon: "🚌", label: "17 Stops" },
+            { icon: "💺", label: "Comfy Seats" },
+            { icon: "📍", label: "Live Track" },
+          ].map((item) => (
+            <Card key={item.label} className="border-0 shadow-sm">
+              <CardContent className="flex flex-col items-center gap-1 p-3">
+                <span className="text-2xl">{item.icon}</span>
+                <span className="text-xs text-muted-foreground font-medium">{item.label}</span>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      <BottomNav />
     </div>
   );
 };
-
-const Index = PlaceholderIndex;
 
 export default Index;
