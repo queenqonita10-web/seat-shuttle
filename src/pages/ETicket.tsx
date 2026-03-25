@@ -6,13 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Armchair, Clock, CheckCircle, QrCode, Navigation, User, Phone } from "lucide-react";
 import { BottomNav } from "@/components/BottomNav";
+import { useEffect } from "react";
 
 export default function ETicket() {
   const navigate = useNavigate();
   const { booking } = useBooking();
 
+  useEffect(() => {
+    if (!booking) {
+      navigate("/", { replace: true });
+    }
+  }, [booking, navigate]);
+
   if (!booking) {
-    navigate("/");
     return null;
   }
 
