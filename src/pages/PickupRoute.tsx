@@ -1,10 +1,10 @@
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "@/context/BookingContext";
-import { routes } from "@/data/mockData";
+import { routes, getPickupTime, formatPrice } from "@/data/mockData";
 import { RouteTimeline } from "@/components/RouteTimeline";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Route } from "lucide-react";
+import { ArrowLeft, Route, MapPin, Clock, Navigation } from "lucide-react";
 
 export default function PickupRoute() {
   const navigate = useNavigate();
@@ -18,9 +18,18 @@ export default function PickupRoute() {
   const route = routes.find((r) => r.id === selectedTrip.routeId);
   if (!route) return null;
 
+  const routePickup = route.pickupPoints.find((p) => p.id === pickupPoint.id);
+  const pickupTime = routePickup
+    ? getPickupTime(selectedTrip.departureTime, routePickup)
+    : selectedTrip.departureTime;
+  const lastPoint = route.pickupPoints[route.pickupPoints.length - 1];
+  const arrivalTime = getPickupTime(selectedTrip.departureTime, {
+    ...lastPoint,
+    timeOffset: lastPoint.timeOffset + 15,
+  });
+
   return (
     <div className="min-h-screen bg-background pb-28">
-      {/* Header */}
       <div className="bg-primary px-5 pb-5 pt-12 text-primary-foreground">
         <div className="mx-auto max-w-md">
           <button onClick={() => navigate("/seats")} className="mb-3 flex items-center gap-1 text-sm text-primary-foreground/80">
@@ -35,10 +44,39 @@ export default function PickupRoute() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-md px-5 mt-4">
+      <div className="mx-auto max-w-md px-5 mt-4 space-y-3">
+        {/* Summary card */}
+        <Card className="border-0 shadow-sm bg-secondary/10">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MapPin size={16} className="text-secondary" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Board at</p>
+                  <p className="text-sm font-semibold text-foreground">{pickupPoint.label}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock size={16} className="text-secondary" />
+                <div className="text-right">
+                  <p className="text-xs text-muted-foreground">Pickup</p>
+                  <p className="text-sm font-bold text-secondary">{pickupTime}</p>
+                </div>
+              </div>
+            </div>
+            <div className="mt-2 pt-2 border-t border-secondary/20 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Navigation size={14} className="text-muted-foreground" />
+                <span className="text-xs text-muted-foreground">Arrive at {route.destination}</span>
+              </div>
+              <span className="text-xs font-medium text-foreground">~{arrivalTime}</span>
+            </div>
+          </CardContent>
+        </Card>
+
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base">Your pickup: {pickupPoint.label}</CardTitle>
+            <CardTitle className="text-base">Route Stops</CardTitle>
           </CardHeader>
           <CardContent>
             <RouteTimeline
@@ -51,7 +89,6 @@ export default function PickupRoute() {
         </Card>
       </div>
 
-      {/* Bottom CTA */}
       <div className="fixed bottom-0 left-0 right-0 border-t bg-card shadow-lg">
         <div className="mx-auto max-w-md p-4">
           <Button onClick={() => navigate("/checkout")} className="w-full h-11 font-semibold">

@@ -1,11 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "@/context/BookingContext";
-import { routes, getTripsByRoute, getAvailableSeats, formatPrice, getPickupTime } from "@/data/mockData";
+import { routes, getTripsByRoute, getAvailableSeats, formatPrice, getPickupTime, getFareForPickup, getVehicleType } from "@/data/mockData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Clock, Users } from "lucide-react";
+import { ArrowLeft, Clock, Users, Bus } from "lucide-react";
 import { useState, useEffect } from "react";
 
 export default function SearchResults() {
@@ -36,7 +36,6 @@ export default function SearchResults() {
 
   return (
     <div className="min-h-screen bg-background pb-6">
-      {/* Header */}
       <div className="bg-primary px-5 pb-5 pt-12 text-primary-foreground">
         <div className="mx-auto max-w-md">
           <button onClick={() => navigate("/")} className="mb-3 flex items-center gap-1 text-sm text-primary-foreground/80">
@@ -63,8 +62,15 @@ export default function SearchResults() {
               </Card>
             ))
           : allTrips.map((trip) => {
+              const route = matchingRoutes.find((r) => r.id === trip.routeId)!;
+              const routePickup = route.pickupPoints.find((p) => p.id === pickupPoint.id);
+              const fare = routePickup ? routePickup.fare : 0;
               const available = getAvailableSeats(trip);
-              const pickupTime = getPickupTime(trip.departureTime, pickupPoint);
+              const pickupTime = routePickup
+                ? getPickupTime(trip.departureTime, routePickup)
+                : trip.departureTime;
+              const vt = getVehicleType(trip.vehicleTypeId);
+
               return (
                 <Card key={trip.id} className="border-0 shadow-sm animate-fade-up">
                   <CardContent className="p-4">
@@ -74,23 +80,35 @@ export default function SearchResults() {
                           <Clock size={14} className="text-muted-foreground" />
                           <span className="font-semibold text-lg">{trip.departureTime}</span>
                         </div>
-                        <p className="text-xs text-muted-foreground ml-[22px]">
-                          Pickup at {pickupPoint.id}: <span className="font-medium text-foreground">{pickupTime}</span>
-                        </p>
+                        {/* Prominent pickup time */}
+                        <div className="ml-[22px] mt-1 flex items-center gap-1.5">
+                          <Badge variant="secondary" className="text-[10px] px-2 py-0.5 bg-secondary/15 text-secondary border-0 font-semibold">
+                            🚏 Board at {pickupTime}
+                          </Badge>
+                        </div>
                       </div>
-                      <span className="text-lg font-bold text-primary">{formatPrice(trip.price)}</span>
+                      <div className="text-right">
+                        <span className="text-lg font-bold text-primary">{formatPrice(fare)}</span>
+                        <p className="text-[10px] text-muted-foreground">from {pickupPoint.id}</p>
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between mt-3">
-                      <div className="flex items-center gap-1.5">
-                        <Users size={14} className="text-muted-foreground" />
-                        {available <= 5 ? (
-                          <Badge variant="destructive" className="text-[10px] px-2 py-0">
-                            Only {available} left!
-                          </Badge>
-                        ) : (
-                          <span className="text-xs text-muted-foreground">{available} seats available</span>
-                        )}
+                      <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-1.5">
+                          <Users size={14} className="text-muted-foreground" />
+                          {available <= 3 ? (
+                            <Badge variant="destructive" className="text-[10px] px-2 py-0">
+                              Only {available} left!
+                            </Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">{available} seats</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Bus size={12} className="text-muted-foreground" />
+                          <span className="text-[10px] text-muted-foreground">{vt.name}</span>
+                        </div>
                       </div>
                       <Button size="sm" onClick={() => handleSelect(trip.id)}>
                         Select

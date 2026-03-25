@@ -1,4 +1,4 @@
-import { Seat } from "@/data/mockData";
+import { Seat, getVehicleType } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 
@@ -6,13 +6,13 @@ interface SeatGridProps {
   seats: Seat[];
   selectedSeat: string | null;
   onSelect: (seatNumber: string) => void;
+  vehicleTypeId: string;
 }
 
-export function SeatGrid({ seats, selectedSeat, onSelect }: SeatGridProps) {
+export function SeatGrid({ seats, selectedSeat, onSelect, vehicleTypeId }: SeatGridProps) {
   const [animating, setAnimating] = useState<string | null>(null);
-
-  const maxRow = Math.max(...seats.map((s) => s.row));
-  const rows = Array.from({ length: maxRow + 1 }, (_, i) => i);
+  const vt = getVehicleType(vehicleTypeId);
+  const available = seats.filter((s) => s.status === "available").length;
 
   const handleSelect = (seat: Seat) => {
     if (seat.status === "booked") return;
@@ -21,12 +21,17 @@ export function SeatGrid({ seats, selectedSeat, onSelect }: SeatGridProps) {
     setTimeout(() => setAnimating(null), 250);
   };
 
-  const getSeatForPosition = (row: number, col: number) => {
-    return seats.find((s) => s.row === row && s.col === col);
-  };
+  const getSeatForPosition = (row: number, col: number) =>
+    seats.find((s) => s.row === row && s.col === col);
 
   return (
     <div className="space-y-4">
+      {/* Vehicle name & availability */}
+      <div className="text-center">
+        <p className="text-sm font-semibold text-foreground">{vt.name}</p>
+        <p className="text-xs text-muted-foreground">{available} of {seats.length} seats available</p>
+      </div>
+
       {/* Legend */}
       <div className="flex items-center justify-center gap-4 text-xs">
         <div className="flex items-center gap-1.5">
@@ -44,34 +49,57 @@ export function SeatGrid({ seats, selectedSeat, onSelect }: SeatGridProps) {
       </div>
 
       {/* Bus layout */}
-      <div className="mx-auto max-w-[240px] rounded-2xl border bg-card p-4 shadow-sm">
-        {/* Driver area */}
-        <div className="mb-4 flex items-center justify-between border-b pb-3">
-          <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
-            <span className="text-xs text-muted-foreground">🚌</span>
-          </div>
-          <span className="text-xs text-muted-foreground font-medium">DRIVER</span>
-          <div className="h-8 w-8 rounded-lg bg-muted" />
+      <div className="mx-auto max-w-[280px] rounded-2xl border bg-card p-4 shadow-sm">
+        {/* FRONT label */}
+        <div className="text-center text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-3">
+          ▲ Front
         </div>
 
-        {/* Seat rows */}
         <div className="space-y-2">
-          {rows.map((row) => (
-            <div key={row} className="flex items-center justify-between">
-              {/* Left pair */}
-              <div className="flex gap-1.5">
-                {[0, 1].map((col) => {
-                  const seat = getSeatForPosition(row, col);
-                  if (!seat) return <div key={col} className="h-9 w-9" />;
+          {vt.layout.map((row, rowIdx) => {
+            const isBaggageRow = row.every((c) => c === "baggage");
+
+            if (isBaggageRow) {
+              return (
+                <div key={rowIdx} className="mt-2 rounded-lg bg-muted/60 border border-dashed border-border py-2 text-center">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    🧳 Baggage
+                  </span>
+                </div>
+              );
+            }
+
+            return (
+              <div key={rowIdx} className="flex items-center justify-center gap-1.5">
+                {row.map((cell, colIdx) => {
+                  if (cell === "driver") {
+                    return (
+                      <div
+                        key={colIdx}
+                        className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center"
+                      >
+                        <span className="text-[10px] font-semibold text-muted-foreground">🚌</span>
+                      </div>
+                    );
+                  }
+
+                  if (cell === "empty") {
+                    return <div key={colIdx} className="h-10 w-10" />;
+                  }
+
+                  const seat = getSeatForPosition(rowIdx, colIdx);
+                  if (!seat) return <div key={colIdx} className="h-10 w-10" />;
+
                   const isSelected = seat.number === selectedSeat;
                   const isBooked = seat.status === "booked";
+
                   return (
                     <button
-                      key={col}
+                      key={colIdx}
                       onClick={() => handleSelect(seat)}
                       disabled={isBooked}
                       className={cn(
-                        "h-9 w-9 rounded-lg text-xs font-medium transition-all duration-150",
+                        "h-10 w-10 rounded-lg text-xs font-medium transition-all duration-150",
                         "flex items-center justify-center",
                         isBooked && "bg-shuttle-seat-booked cursor-not-allowed text-muted-foreground",
                         isSelected && "bg-primary text-primary-foreground shadow-md",
@@ -84,38 +112,13 @@ export function SeatGrid({ seats, selectedSeat, onSelect }: SeatGridProps) {
                   );
                 })}
               </div>
+            );
+          })}
+        </div>
 
-              {/* Aisle */}
-              <div className="w-6" />
-
-              {/* Right pair */}
-              <div className="flex gap-1.5">
-                {[2, 3].map((col) => {
-                  const seat = getSeatForPosition(row, col);
-                  if (!seat) return <div key={col} className="h-9 w-9" />;
-                  const isSelected = seat.number === selectedSeat;
-                  const isBooked = seat.status === "booked";
-                  return (
-                    <button
-                      key={col}
-                      onClick={() => handleSelect(seat)}
-                      disabled={isBooked}
-                      className={cn(
-                        "h-9 w-9 rounded-lg text-xs font-medium transition-all duration-150",
-                        "flex items-center justify-center",
-                        isBooked && "bg-shuttle-seat-booked cursor-not-allowed text-muted-foreground",
-                        isSelected && "bg-primary text-primary-foreground shadow-md",
-                        !isBooked && !isSelected && "bg-shuttle-seat-available border border-border hover:border-primary hover:bg-primary/10",
-                        animating === seat.number && "animate-seat-pop"
-                      )}
-                    >
-                      {seat.number}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+        {/* REAR label */}
+        <div className="text-center text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mt-3">
+          ▼ Rear
         </div>
       </div>
     </div>
