@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "@/context/BookingContext";
-import { useRoutesByDestination } from "@/hooks/useRoutes";
-import { useTripsByRoutes } from "@/hooks/useTrips";
+import { useRoutes } from "@/hooks/useRoutes";
+import { useTrips } from "@/hooks/useTrips";
 import { useVehicleTypes } from "@/hooks/useVehicles";
 import { formatPrice, getPickupTime } from "@/lib/formatters";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,9 +15,10 @@ export default function SearchResults() {
   const navigate = useNavigate();
   const { pickupPoint, destination, setSelectedTrip } = useBooking();
 
-  const { data: matchingRoutes = [], isLoading: loadingRoutes } = useRoutesByDestination(destination);
+  const { data: routes = [], isLoading: loadingRoutes } = useRoutes();
+  const matchingRoutes = useMemo(() => routes.filter((r) => r.destination === destination), [routes, destination]);
   const routeIds = useMemo(() => matchingRoutes.map((r) => r.id), [matchingRoutes]);
-  const { data: allTrips = [], isLoading: loadingTrips } = useTripsByRoutes(routeIds);
+  const { data: allTrips = [], isLoading: loadingTrips } = useTrips(routeIds);
   const { data: vehicleTypes = [] } = useVehicleTypes();
 
   if (!pickupPoint || !destination) {

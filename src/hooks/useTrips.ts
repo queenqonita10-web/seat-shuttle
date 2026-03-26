@@ -1,17 +1,17 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export const useTrips = (routeId: string) => {
+export const useTrips = (routeIds: string[]) => {
   return useQuery({
-    queryKey: ['trips', routeId],
+    queryKey: ['trips', routeIds],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('trips')
         .select('*, routes(*), vehicles(*), drivers(*), seats(*)')
-        .eq('route_id', routeId);
+        .in('route_id', routeIds);
       if (error) throw new Error(error.message);
       return data;
     },
-    enabled: !!routeId,
+    enabled: !!routeIds && routeIds.length > 0,
   });
 };

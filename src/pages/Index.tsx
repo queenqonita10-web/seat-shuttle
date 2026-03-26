@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useBooking } from "@/context/BookingContext";
-import { usePickupPoints, useDestinations } from "@/hooks/useRoutes";
+import { useRoutes } from "@/hooks/useRoutes";
 import { BottomNav } from "@/components/BottomNav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,8 +16,15 @@ import { Bus, CalendarIcon, MapPin, Navigation, Search } from "lucide-react";
 const Index = () => {
   const navigate = useNavigate();
   const { setPickupPoint, setDestination, setDate, pickupPoint, destination, date } = useBooking();
-  const { data: pickupPoints, isLoading: loadingPickups } = usePickupPoints();
-  const { data: destinations, isLoading: loadingDest } = useDestinations();
+  const { data: routes, isLoading: loadingRoutes } = useRoutes();
+
+  const pickupPoints = routes
+    ? [...new Map(routes.flatMap((route) => route.pickup_points).map((item) => [item["id"], item])).values()]
+    : [];
+  const destinations = routes ? [...new Set(routes.map((route) => route.destination))] : [];
+
+  const loadingPickups = loadingRoutes;
+  const loadingDest = loadingRoutes;
 
   const handleSearch = () => {
     if (!pickupPoint || !destination || !date) return;

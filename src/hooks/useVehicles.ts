@@ -11,3 +11,14 @@ export const useVehicles = () => {
     },
   });
 };
+
+export const useVehicleTypes = () => {
+  return useQuery({
+    queryKey: ['vehicle_types'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('vehicle_types').select('*');
+      if (error) throw new Error(error.message);
+      return data;
+    },
+  });
+};

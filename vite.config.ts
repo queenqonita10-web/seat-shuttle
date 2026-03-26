@@ -13,6 +13,9 @@ export default defineConfig(({ mode }) => ({
     },
   },
   plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
+  optimizeDeps: {
+    include: ['@supabase/auth-ui-react', '@supabase/auth-ui-shared'],
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
