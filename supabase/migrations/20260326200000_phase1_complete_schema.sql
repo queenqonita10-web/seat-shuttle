@@ -1,439 +1,311 @@
--- =============================================
--- PYU-GO Phase 1: Complete Production Schema
--- Database Schema + Auth + RLS Policies
--- =============================================
+-- Fase 1: Database Schema Migration
 
--- ========== 1. ENUMS & TYPES ==========
+-- 1. Custom Types
+CREATE TYPE app_role AS ENUM ('admin', 'driver');
+CREATE TYPE booking_status AS ENUM ('pending', 'confirmed', 'cancelled', 'completed');
+CREATE TYPE ticket_status AS ENUM ('valid', 'used', 'expired');
+CREATE TYPE vehicle_status AS ENUM ('available', 'in_trip', 'maintenance');
+CREATE TYPE driver_status AS ENUM ('active', 'inactive', 'on_leave');
+CREATE TYPE seat_status AS ENUM ('available', 'booked', 'locked');
 
-CREATE TYPE public.app_role AS ENUM ('admin', 'driver', 'passenger');
+-- 2. Tables
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  name VARCHAR(255),
+  phone VARCHAR(20),
+  avatar_url TEXT,
+  loyalty_points INT DEFAULT 0
+);
 
-CREATE TYPE public.trip_status AS ENUM ('pending', 'active', 'completed', 'cancelled');
+CREATE TABLE user_roles (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role app_role NOT NULL,
+  UNIQUE(user_id, role)
+);
 
-CREATE TYPE public.booking_status AS ENUM ('pending', 'picked_up', 'no_show', 'cancelled');
+CREATE TABLE seat_layout_templates (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  rows INT NOT NULL,
+  cols INT NOT NULL,
+  layout JSONB NOT NULL,
+  capacity INT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-CREATE TYPE public.payment_status_enum AS ENUM ('pending', 'processing', 'success', 'failed', 'cancelled', 'expired');
+CREATE TABLE vehicle_types (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  layout_id BIGINT REFERENCES seat_layout_templates(id),
+  capacity INT NOT NULL
+);
 
-CREATE TYPE public.vehicle_status AS ENUM ('active', 'maintenance', 'inactive');
+CREATE TABLE vehicles (
+  id BIGSERIAL PRIMARY KEY,
+  brand VARCHAR(100) NOT NULL,
+  model VARCHAR(100),
+  plate_number VARCHAR(20) NOT NULL UNIQUE,
+  type_id BIGINT REFERENCES vehicle_types(id),
+  status vehicle_status DEFAULT 'available',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-CREATE TYPE public.driver_status AS ENUM ('online', 'offline', 'on_trip');
+CREATE TABLE drivers (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name VARCHAR(255) NOT NULL,
+  phone VARCHAR(20) NOT NULL,
+  license_number VARCHAR(50) NOT NULL UNIQUE,
+  status driver_status DEFAULT 'active',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-CREATE TYPE public.seat_status AS ENUM ('available', 'booked', 'reserved');
+CREATE TABLE routes (
+  id VARCHAR(20) PRIMARY KEY,
+  route_code VARCHAR(50) NOT NULL UNIQUE,
+  name VARCHAR(255) NOT NULL,
+  origin VARCHAR(255) NOT NULL,
+  destination VARCHAR(255) NOT NULL,
+  distance NUMERIC(10, 2) NOT NULL,
+  estimated_time VARCHAR(50) NOT NULL,
+  description TEXT,
+  status VARCHAR(20) DEFAULT 'active',
+  is_deleted BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
 
-CREATE TYPE public.ticket_status AS ENUM ('active', 'completed', 'cancelled');
+CREATE TABLE pickup_points (
+  id BIGSERIAL PRIMARY KEY,
+  route_id VARCHAR(20) REFERENCES routes(id) ON DELETE CASCADE,
+  label VARCHAR(255) NOT NULL,
+  "order" INT NOT NULL,
+  time_offset INTERVAL NOT NULL,
+  fare_adjustment NUMERIC(10, 2) DEFAULT 0,
+  latitude NUMERIC(9, 6),
+  longitude NUMERIC(9, 6)
+);
 
-CREATE TYPE public.tracking_status AS ENUM ('scheduled', 'driver_assigned', 'en_route', 'arrived_at_pickup', 'picked_up', 'arrived_at_destination');
+CREATE TABLE trips (
+  id BIGSERIAL PRIMARY KEY,
+  route_id VARCHAR(20) REFERENCES routes(id),
+  vehicle_id BIGINT REFERENCES vehicles(id),
+  driver_id BIGINT REFERENCES drivers(id),
+  departure_time TIMESTAMPTZ NOT NULL,
+  arrival_time TIMESTAMPTZ,
+  status VARCHAR(50) DEFAULT 'scheduled',
+  base_fare NUMERIC(10, 2) NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
 
--- ========== 2. UTILITY FUNCTIONS ==========
+CREATE TABLE seats (
+  id BIGSERIAL PRIMARY KEY,
+  trip_id BIGINT REFERENCES trips(id) ON DELETE CASCADE,
+  seat_number VARCHAR(10) NOT NULL,
+  status seat_status DEFAULT 'available',
+  UNIQUE(trip_id, seat_number)
+);
 
--- Update updated_at timestamp automatically
-CREATE OR REPLACE FUNCTION public.update_updated_at_column()
-RETURNS TRIGGER AS $$
+CREATE TABLE bookings (
+  id BIGSERIAL PRIMARY KEY,
+  trip_id BIGINT REFERENCES trips(id),
+  passenger_id UUID REFERENCES auth.users(id),
+  pickup_point_id BIGINT REFERENCES pickup_points(id),
+  num_passengers INT NOT NULL,
+  total_fare NUMERIC(10, 2) NOT NULL,
+  status booking_status DEFAULT 'pending',
+  payment_method VARCHAR(50),
+  payment_id VARCHAR(255),
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE tickets (
+  id BIGSERIAL PRIMARY KEY,
+  booking_id BIGINT REFERENCES bookings(id) ON DELETE CASCADE,
+  seat_number VARCHAR(10) NOT NULL,
+  passenger_name VARCHAR(255),
+  qr_code TEXT,
+  status ticket_status DEFAULT 'valid',
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE driver_locations (
+  id BIGSERIAL PRIMARY KEY,
+  driver_id BIGINT REFERENCES drivers(id) ON DELETE CASCADE,
+  latitude NUMERIC(9, 6) NOT NULL,
+  longitude NUMERIC(9, 6) NOT NULL,
+  "timestamp" TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE audit_logs (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id),
+  action VARCHAR(255) NOT NULL,
+  modified_table VARCHAR(100),
+  record_id VARCHAR(255),
+  details JSONB,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 3. Functions & Triggers
+
+-- Function to check user role
+CREATE OR REPLACE FUNCTION has_role(user_id UUID, role_name app_role)
+RETURNS BOOLEAN AS $$
 BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
+  RETURN EXISTS (
+    SELECT 1 FROM user_roles
+    WHERE user_roles.user_id = has_role.user_id AND user_roles.role = has_role.role_name
+  );
 END;
-$$ LANGUAGE plpgsql SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Check if user has a specific role
-CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role app_role)
-RETURNS BOOLEAN
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1 FROM public.user_roles
-    WHERE user_id = _user_id AND role = _role
-  )
-$$;
-
--- Auto-create profile on signup
+-- Trigger to create a profile on new user signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (user_id, name, email)
-  VALUES (
-    NEW.id,
-    COALESCE(NEW.raw_user_meta_data->>'name', NEW.raw_user_meta_data->>'full_name', ''),
-    COALESCE(NEW.email, '')
-  );
-  RETURN NEW;
+  INSERT INTO public.profiles (id, name, avatar_url)
+  VALUES (new.id, new.raw_user_meta_data->>'name', new.raw_user_meta_data->>'avatar_url');
+  RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- ========== 3. CORE TABLES ==========
-
--- User roles
-CREATE TABLE public.user_roles (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  role app_role NOT NULL,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (user_id, role)
-);
-
-ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view own roles" ON public.user_roles FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Admins can manage roles" ON public.user_roles FOR ALL USING (public.has_role(auth.uid(), 'admin'));
-
--- Profiles
-CREATE TABLE public.profiles (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL UNIQUE REFERENCES auth.users(id) ON DELETE CASCADE,
-  name TEXT NOT NULL DEFAULT '',
-  phone TEXT DEFAULT '',
-  email TEXT DEFAULT '',
-  avatar_url TEXT DEFAULT '',
-  address TEXT DEFAULT '',
-  loyalty_points INTEGER NOT NULL DEFAULT 0,
-  total_trips INTEGER NOT NULL DEFAULT 0,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Admins can update all profiles" ON public.profiles FOR UPDATE USING (public.has_role(auth.uid(), 'admin'));
-
-CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON public.profiles
-FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
--- ========== 4. ROUTES & LOCATIONS ==========
-
--- Routes
-CREATE TABLE public.routes (
-  id TEXT PRIMARY KEY,
-  route_code TEXT NOT NULL UNIQUE,
-  name TEXT NOT NULL,
-  origin TEXT NOT NULL,
-  destination TEXT NOT NULL,
-  distance NUMERIC NOT NULL DEFAULT 0,
-  estimated_time TEXT NOT NULL DEFAULT '',
-  description TEXT DEFAULT '',
-  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive')),
-  is_deleted BOOLEAN NOT NULL DEFAULT false,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.routes ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Public can read active routes" ON public.routes FOR SELECT USING (NOT is_deleted);
-CREATE POLICY "Admins can manage routes" ON public.routes FOR ALL USING (public.has_role(auth.uid(), 'admin'));
-
-CREATE TRIGGER update_routes_updated_at BEFORE UPDATE ON public.routes FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
--- Pickup points
-CREATE TABLE public.pickup_points (
-  id TEXT NOT NULL,
-  route_id TEXT NOT NULL REFERENCES public.routes(id) ON DELETE CASCADE,
-  label TEXT NOT NULL,
-  description TEXT DEFAULT '',
-  sort_order INTEGER NOT NULL DEFAULT 0,
-  time_offset INTEGER NOT NULL DEFAULT 0,
-  fare NUMERIC NOT NULL DEFAULT 0,
-  latitude NUMERIC,
-  longitude NUMERIC,
-  PRIMARY KEY (id, route_id)
-);
-
-ALTER TABLE public.pickup_points ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Public can read pickup points" ON public.pickup_points FOR SELECT USING (true);
-CREATE POLICY "Admins can manage pickup points" ON public.pickup_points FOR ALL USING (public.has_role(auth.uid(), 'admin'));
-
--- ========== 5. VEHICLES ==========
-
--- Vehicle types
-CREATE TABLE public.vehicle_types (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  capacity INTEGER NOT NULL,
-  layout JSONB NOT NULL DEFAULT '[]',
-  description TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.vehicle_types ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Public can read vehicle types" ON public.vehicle_types FOR SELECT USING (true);
-CREATE POLICY "Admins can manage vehicle types" ON public.vehicle_types FOR ALL USING (public.has_role(auth.uid(), 'admin'));
-
--- Seat layout templates
-CREATE TABLE public.seat_layout_templates (
-  id TEXT PRIMARY KEY,
-  name TEXT NOT NULL,
-  rows INTEGER NOT NULL,
-  cols INTEGER NOT NULL,
-  layout JSONB NOT NULL DEFAULT '[]',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.seat_layout_templates ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Public can read seat layouts" ON public.seat_layout_templates FOR SELECT USING (true);
-CREATE POLICY "Admins can manage seat layouts" ON public.seat_layout_templates FOR ALL USING (public.has_role(auth.uid(), 'admin'));
-
--- Vehicles
-CREATE TABLE public.vehicles (
-  id TEXT PRIMARY KEY,
-  vehicle_type_id TEXT NOT NULL REFERENCES public.vehicle_types(id),
-  layout_template_id TEXT REFERENCES public.seat_layout_templates(id),
-  brand TEXT NOT NULL,
-  model TEXT NOT NULL,
-  year INTEGER NOT NULL,
-  color TEXT NOT NULL DEFAULT '',
-  license_plate TEXT NOT NULL UNIQUE,
-  status vehicle_status NOT NULL DEFAULT 'active',
-  assigned_route_id TEXT REFERENCES public.routes(id),
-  is_deleted BOOLEAN NOT NULL DEFAULT false,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.vehicles ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Public can read active vehicles" ON public.vehicles FOR SELECT USING (NOT is_deleted);
-CREATE POLICY "Admins can manage vehicles" ON public.vehicles FOR ALL USING (public.has_role(auth.uid(), 'admin'));
-
-CREATE TRIGGER update_vehicles_updated_at BEFORE UPDATE ON public.vehicles FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
--- ========== 6. DRIVERS ==========
-
-CREATE TABLE public.drivers (
-  id TEXT PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  name TEXT NOT NULL,
-  phone TEXT NOT NULL DEFAULT '',
-  status driver_status NOT NULL DEFAULT 'offline',
-  avatar_url TEXT DEFAULT '',
-  license_number TEXT,
-  verified_at TIMESTAMPTZ,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.drivers ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Public can read drivers" ON public.drivers FOR SELECT USING (true);
-CREATE POLICY "Admins can manage drivers" ON public.drivers FOR ALL USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Drivers can update own record" ON public.drivers FOR UPDATE USING (user_id = auth.uid());
-
-CREATE TRIGGER update_drivers_updated_at BEFORE UPDATE ON public.drivers FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
--- ========== 7. TRIPS & SEATS ==========
-
--- Trips
-CREATE TABLE public.trips (
-  id TEXT PRIMARY KEY,
-  route_id TEXT NOT NULL REFERENCES public.routes(id),
-  departure_time TEXT NOT NULL,
-  vehicle_type_id TEXT NOT NULL REFERENCES public.vehicle_types(id),
-  vehicle_id TEXT REFERENCES public.vehicles(id),
-  driver_id TEXT REFERENCES public.drivers(id),
-  status trip_status NOT NULL DEFAULT 'pending',
-  departure_date DATE NOT NULL DEFAULT CURRENT_DATE,
-  estimated_arrival_time TEXT,
-  actual_departure_time TIMESTAMPTZ,
-  actual_arrival_time TIMESTAMPTZ,
-  notes TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.trips ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Public can read trips" ON public.trips FOR SELECT USING (true);
-CREATE POLICY "Admins can manage trips" ON public.trips FOR ALL USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Drivers can update own trips" ON public.trips FOR UPDATE USING (driver_id IS NOT NULL AND public.has_role(auth.uid(), 'driver'));
-
-CREATE TRIGGER update_trips_updated_at BEFORE UPDATE ON public.trips FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
-CREATE INDEX idx_trips_route_id ON public.trips(route_id);
-CREATE INDEX idx_trips_driver_id ON public.trips(driver_id);
-CREATE INDEX idx_trips_departure_date ON public.trips(departure_date);
-
--- Seats
-CREATE TABLE public.seats (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  trip_id TEXT NOT NULL REFERENCES public.trips(id) ON DELETE CASCADE,
-  seat_number TEXT NOT NULL,
-  row_num INTEGER NOT NULL,
-  col_num INTEGER NOT NULL,
-  status seat_status NOT NULL DEFAULT 'available',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  UNIQUE (trip_id, seat_number)
-);
-
-ALTER TABLE public.seats ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Public can read seats" ON public.seats FOR SELECT USING (true);
-CREATE POLICY "Admins can manage seats" ON public.seats FOR ALL USING (public.has_role(auth.uid(), 'admin'));
-
-CREATE TRIGGER update_seats_updated_at BEFORE UPDATE ON public.seats FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
--- ========== 8. BOOKINGS & PAYMENTS ==========
-
--- Bookings
-CREATE TABLE public.bookings (
-  id TEXT PRIMARY KEY,
-  trip_id TEXT NOT NULL REFERENCES public.trips(id),
-  user_id UUID REFERENCES auth.users(id),
-  seat_number TEXT NOT NULL,
-  pickup_point_id TEXT NOT NULL,
-  passenger_name TEXT NOT NULL,
-  passenger_phone TEXT NOT NULL DEFAULT '',
-  payment_method TEXT NOT NULL DEFAULT 'pending',
-  payment_status public.payment_status_enum NOT NULL DEFAULT 'pending',
-  status booking_status NOT NULL DEFAULT 'pending',
-  fare NUMERIC NOT NULL DEFAULT 0,
-  booking_code TEXT UNIQUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.bookings ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view own bookings" ON public.bookings FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can create bookings" ON public.bookings FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Admins can manage all bookings" ON public.bookings FOR ALL USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Drivers can view trip bookings" ON public.bookings FOR SELECT USING (
-  EXISTS (SELECT 1 FROM public.trips t WHERE t.id = trip_id AND t.driver_id = (SELECT id FROM public.drivers WHERE user_id = auth.uid()))
-);
-
-CREATE TRIGGER update_bookings_updated_at BEFORE UPDATE ON public.bookings FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
-CREATE INDEX idx_bookings_user_id ON public.bookings(user_id);
-CREATE INDEX idx_bookings_trip_id ON public.bookings(trip_id);
-
--- Payment transactions
-CREATE TABLE public.payment_transactions (
-  id TEXT PRIMARY KEY,
-  booking_id TEXT NOT NULL REFERENCES public.bookings(id) ON DELETE CASCADE,
-  midtrans_transaction_id TEXT UNIQUE,
-  midtrans_order_id TEXT NOT NULL UNIQUE,
-  payment_method TEXT NOT NULL,
-  amount NUMERIC NOT NULL,
-  currency TEXT NOT NULL DEFAULT 'IDR',
-  status public.payment_status_enum NOT NULL DEFAULT 'pending',
-  transaction_time TIMESTAMPTZ,
-  transaction_status TEXT,
-  fraud_status TEXT,
-  payment_type TEXT,
-  snap_token TEXT,
-  snap_redirect_url TEXT,
-  metadata JSONB DEFAULT '{}',
-  error_code TEXT,
-  error_message TEXT,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  completed_at TIMESTAMPTZ
-);
-
-ALTER TABLE public.payment_transactions ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view own payment transactions" ON public.payment_transactions 
-  FOR SELECT USING (EXISTS (SELECT 1 FROM public.bookings b WHERE b.id = booking_id AND b.user_id = auth.uid()));
-CREATE POLICY "Users can create payment transactions" ON public.payment_transactions 
-  FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM public.bookings b WHERE b.id = booking_id AND b.user_id = auth.uid()));
-CREATE POLICY "Admins can manage all transactions" ON public.payment_transactions FOR ALL USING (public.has_role(auth.uid(), 'admin'));
-
-CREATE TRIGGER update_payment_transactions_updated_at BEFORE UPDATE ON public.payment_transactions FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
-CREATE INDEX idx_payment_transactions_booking_id ON public.payment_transactions(booking_id);
-CREATE INDEX idx_payment_transactions_order_id ON public.payment_transactions(midtrans_order_id);
-
--- ========== 9. TICKETS ==========
-
-CREATE TABLE public.tickets (
-  id TEXT PRIMARY KEY,
-  booking_id TEXT NOT NULL REFERENCES public.bookings(id) ON DELETE CASCADE,
-  trip_id TEXT NOT NULL REFERENCES public.trips(id),
-  route_id TEXT NOT NULL REFERENCES public.routes(id),
-  seat_number TEXT NOT NULL,
-  departure_date DATE NOT NULL,
-  departure_time TEXT NOT NULL,
-  pickup_point_id TEXT NOT NULL,
-  status ticket_status NOT NULL DEFAULT 'active',
-  tracking_status tracking_status NOT NULL DEFAULT 'scheduled',
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.tickets ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view own tickets" ON public.tickets FOR SELECT USING (
-  EXISTS (SELECT 1 FROM public.bookings b WHERE b.id = booking_id AND b.user_id = auth.uid())
-);
-CREATE POLICY "Admins can manage all tickets" ON public.tickets FOR ALL USING (public.has_role(auth.uid(), 'admin'));
-CREATE POLICY "Drivers can view trip tickets" ON public.tickets FOR SELECT USING (
-  EXISTS (SELECT 1 FROM public.trips t WHERE t.id = trip_id AND t.driver_id = (SELECT id FROM public.drivers WHERE user_id = auth.uid()))
-);
-
-CREATE TRIGGER update_tickets_updated_at BEFORE UPDATE ON public.tickets FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
-
-CREATE INDEX idx_tickets_booking_id ON public.tickets(booking_id);
-CREATE INDEX idx_tickets_trip_id ON public.tickets(trip_id);
-
--- ========== 10. REAL-TIME TRACKING ==========
-
-CREATE TABLE public.driver_locations (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  driver_id TEXT NOT NULL REFERENCES public.drivers(id) ON DELETE CASCADE,
-  trip_id TEXT REFERENCES public.trips(id),
-  latitude NUMERIC NOT NULL,
-  longitude NUMERIC NOT NULL,
-  speed NUMERIC,
-  heading NUMERIC,
-  accuracy NUMERIC,
-  timestamp TIMESTAMPTZ NOT NULL DEFAULT now(),
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.driver_locations ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Drivers can insert own locations" ON public.driver_locations FOR INSERT WITH CHECK (
-  driver_id = (SELECT id FROM public.drivers WHERE user_id = auth.uid())
-);
-CREATE POLICY "Passengers can view active locations" ON public.driver_locations FOR SELECT USING (true);
-CREATE POLICY "Admins can view all locations" ON public.driver_locations FOR SELECT USING (public.has_role(auth.uid(), 'admin'));
-
-CREATE INDEX idx_driver_locations_driver_id ON public.driver_locations(driver_id);
-CREATE INDEX idx_driver_locations_timestamp ON public.driver_locations(timestamp DESC);
-
--- ========== 11. AUDIT LOGS ==========
-
-CREATE TABLE public.audit_logs (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
-  action TEXT NOT NULL,
-  module TEXT NOT NULL,
-  details JSONB,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Admins can view audit logs" ON public.audit_logs FOR SELECT USING (public.has_role(auth.uid(), 'admin'));
-
-CREATE INDEX idx_audit_logs_user_id ON public.audit_logs(user_id);
-CREATE INDEX idx_audit_logs_created_at ON public.audit_logs(created_at DESC);
-
--- ========== 12. AUTH TRIGGERS ==========
-
--- Create profile on user signup
 CREATE TRIGGER on_auth_user_created
-AFTER INSERT ON auth.users
-FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
--- ========== 13. GRANTS ==========
+-- 4. RLS Policies
 
-GRANT USAGE ON SCHEMA public TO authenticated, anon;
-GRANT SELECT ON ALL TABLES IN SCHEMA public TO authenticated, anon;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "User can view and update their own profile" ON profiles
+  FOR ALL USING (auth.uid() = id);
+
+ALTER TABLE user_roles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admins can manage all roles" ON user_roles
+  FOR ALL USING (has_role(auth.uid(), 'admin'));
+CREATE POLICY "Users can view their own roles" ON user_roles
+  FOR SELECT USING (auth.uid() = user_id);
+
+ALTER TABLE routes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read routes" ON routes
+  FOR SELECT USING (true);
+CREATE POLICY "Admins can manage routes" ON routes
+  FOR ALL USING (has_role(auth.uid(), 'admin'));
+
+ALTER TABLE pickup_points ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read pickup points" ON pickup_points
+  FOR SELECT USING (true);
+CREATE POLICY "Admins can manage pickup points" ON pickup_points
+  FOR ALL USING (has_role(auth.uid(), 'admin'));
+
+ALTER TABLE vehicle_types ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read vehicle types" ON vehicle_types
+  FOR SELECT USING (true);
+CREATE POLICY "Admins can manage vehicle types" ON vehicle_types
+  FOR ALL USING (has_role(auth.uid(), 'admin'));
+
+ALTER TABLE trips ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read trips" ON trips
+  FOR SELECT USING (true);
+CREATE POLICY "Admins can manage trips" ON trips
+  FOR ALL USING (has_role(auth.uid(), 'admin'));
+
+ALTER TABLE seats ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public can read seat status" ON seats
+  FOR SELECT USING (true);
+CREATE POLICY "Admins and drivers can manage seats" ON seats
+  FOR ALL USING (has_role(auth.uid(), 'admin') OR has_role(auth.uid(), 'driver'));
+
+ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "User can create and view their own bookings" ON bookings
+  FOR ALL USING (auth.uid() = passenger_id);
+CREATE POLICY "Admins can view all bookings" ON bookings
+  FOR SELECT USING (has_role(auth.uid(), 'admin'));
+
+ALTER TABLE tickets ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "User can view their own tickets" ON tickets
+  FOR SELECT USING (booking_id IN (SELECT id FROM bookings WHERE passenger_id = auth.uid()));
+CREATE POLICY "Admins and drivers can view all tickets" ON tickets
+  FOR SELECT USING (has_role(auth.uid(), 'admin') OR has_role(auth.uid(), 'driver'));
+
+ALTER TABLE vehicles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin-only access for vehicles" ON vehicles
+  FOR ALL USING (has_role(auth.uid(), 'admin'));
+
+ALTER TABLE drivers ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin-only access for drivers" ON drivers
+  FOR ALL USING (has_role(auth.uid(), 'admin'));
+
+ALTER TABLE driver_locations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Driver can update their own location" ON driver_locations
+  FOR ALL USING (driver_id IN (SELECT id FROM drivers WHERE user_id = auth.uid()));
+CREATE POLICY "Authenticated users can view driver locations" ON driver_locations
+  FOR SELECT USING (auth.role() = 'authenticated');
+
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin-only access for audit logs" ON audit_logs
+  FOR ALL USING (has_role(auth.uid(), 'admin'));
+
+ALTER TABLE seat_layout_templates ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Admin-only access for seat layout templates" ON seat_layout_templates
+  FOR ALL USING (has_role(auth.uid(), 'admin'));
+
+-- Function to get daily booking trends for the last 7 days
+CREATE OR REPLACE FUNCTION get_daily_booking_trends()
+RETURNS TABLE(day TEXT, bookings BIGINT) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 
+    to_char(d.day, 'Dy') AS day,
+    COALESCE(b.bookings, 0) AS bookings
+  FROM 
+    generate_series(
+      (NOW() - interval '6 days')::date,
+      NOW()::date,
+      '1 day'::interval
+    ) d(day)
+  LEFT JOIN (
+    SELECT 
+      date_trunc('day', created_at)::date AS booking_day,
+      COUNT(*) as bookings
+    FROM bookings
+    WHERE created_at >= NOW() - interval '7 days'
+    GROUP BY 1
+  ) b ON d.day = b.booking_day
+  ORDER BY d.day;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Driver Operations Functions
+
+CREATE OR REPLACE FUNCTION start_trip(trip_id_param BIGINT)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE trips SET status = 'active', departure_time = NOW() WHERE id = trip_id_param;
+  UPDATE vehicles SET status = 'in_trip' WHERE id = (SELECT vehicle_id FROM trips WHERE id = trip_id_param);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION check_in_passenger(ticket_id_param BIGINT)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE tickets SET status = 'used' WHERE id = ticket_id_param;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION mark_no_show(booking_id_param BIGINT)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE bookings SET status = 'cancelled' WHERE id = booking_id_param;
+  -- Potentially add logic to handle seat availability
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION end_trip(trip_id_param BIGINT)
+RETURNS VOID AS $$
+BEGIN
+  UPDATE trips SET status = 'completed', arrival_time = NOW() WHERE id = trip_id_param;
+  UPDATE vehicles SET status = 'available' WHERE id = (SELECT vehicle_id FROM trips WHERE id = trip_id_param);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

@@ -11,20 +11,12 @@ import { useAdminDashboard } from "@/hooks/admin/useAdminDashboard";
 import { useAdminBookings } from "@/hooks/admin/useAdminBookings";
 import { useAdminTrips } from "@/hooks/admin/useAdminTrips";
 import { useAdminDrivers } from "@/hooks/admin/useAdminDrivers";
+import { useAdminBookingTrends } from "@/hooks/admin/useAdminBookingTrends";
 import { formatPrice } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
-// Mock chart data (will be replaced with real aggregation later)
-const chartData = [
-  { day: "Mon", bookings: 5 },
-  { day: "Tue", bookings: 8 },
-  { day: "Wed", bookings: 3 },
-  { day: "Thu", bookings: 7 },
-  { day: "Fri", bookings: 12 },
-  { day: "Sat", bookings: 9 },
-  { day: "Sun", bookings: 4 },
-];
+
 
 export default function Dashboard() {
   const navigate = useNavigate();

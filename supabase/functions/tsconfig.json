@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "https://esm.sh/react@18.2.0",
+    "lib": ["dom", "dom.iterable", "esnext", "deno.ns"],
+    "strict": true,
+    "paths": {
+      "@/*": ["../../src/*"]
+    }
+  },
+  "include": ["./**/*.ts"]
+}

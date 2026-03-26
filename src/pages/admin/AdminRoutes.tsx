@@ -87,7 +87,7 @@ const AdminRoutes = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (route: RouteFormValues) => {
+  const handleEdit = (route: RouteWithPickups) => {
     setEditingRoute(route);
     reset(route);
     setIsDialogOpen(true);
@@ -107,7 +107,7 @@ const AdminRoutes = () => {
         const { id, ...createData } = data;
         await createRoute.mutateAsync({
           ...createData,
-          id: `RTE-${Date.now()}`, // Simple unique ID generation
+          id: `RTE-${Date.now()}`,
         });
       }
       setIsDialogOpen(false);
@@ -125,7 +125,6 @@ const AdminRoutes = () => {
       route.route_code.toLowerCase().includes(query)
     );
   });
-
   return (
     <div className="space-y-6 p-6">
       <div>
@@ -201,7 +200,7 @@ const AdminRoutes = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEdit(route as RouteFormValues)}>
+                            <DropdownMenuItem onClick={() => handleEdit(route)}>
                               Edit
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleDelete(route.id)} className="text-red-600">

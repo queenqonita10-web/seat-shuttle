@@ -4,9 +4,11 @@ import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Route = Tables<"routes">;
+type RouteInsert = Tables<"routes", "Insert">;
+type RouteUpdate = Tables<"routes", "Update">;
 type PickupPoint = Tables<"pickup_points">;
 
-interface RouteWithPickups extends Route {
+export interface RouteWithPickups extends Route {
   pickup_points?: PickupPoint[];
 }
 
@@ -17,6 +19,7 @@ export function useAdminRoutes() {
       const { data, error } = await supabase
         .from("routes")
         .select(`*, pickup_points(*)`)
+        .eq('is_deleted', false)
         .order("created_at", { ascending: false });
 
       if (error) throw new Error(error.message);
@@ -47,7 +50,7 @@ export function useAdminRouteCreate() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (routeData: Omit<Route, "created_at">) => {
+    mutationFn: async (routeData: RouteInsert) => {
       const { data, error } = await supabase
         .from("routes")
         .insert([routeData])
