@@ -33,11 +33,40 @@ export default function Auth() {
   // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && user) {
-      if (role === "admin") navigate("/admin", { replace: true });
-      else if (role === "driver") navigate("/driver", { replace: true });
-      else navigate("/", { replace: true });
+      if (role === "admin") {
+        console.log("Admin detected, redirecting to admin dashboard...");
+        toast.success("Login berhasil as Admin!");
+        navigate("/admin", { replace: true });
+      } else if (role === "driver") {
+        console.log("Driver detected, redirecting to driver app...");
+        toast.success("Login berhasil as Driver!");
+        navigate("/driver", { replace: true });
+      } else if (role === null) {
+        // Passenger or no specific role
+        console.log("Passenger/User detected, redirecting to home...");
+        toast.success("Login berhasil!");
+        navigate("/", { replace: true });
+      } else {
+        // Invalid/unexpected role
+        console.error("Invalid role detected:", role);
+        setError("Role pengguna tidak valid. Silakan hubungi admin.");
+        toast.error("Role tidak valid!");
+        // We might want to logout here, but let's just stay on the auth page
+      }
     }
   }, [user, role, authLoading, navigate]);
+
+  // If auth is loading, show a full-page loader
+  if (authLoading && !loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-muted-foreground animate-pulse">Memuat profil Anda...</p>
+        </div>
+      </div>
+    );
+  }
 
   // ========== LOGIN HANDLERS ==========
 

@@ -34,17 +34,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Helper to fetch role — used by both paths
     const fetchRole = async (userId: string) => {
       try {
+        console.log("Fetching role for user:", userId);
         const { data, error } = await supabase
           .from("user_roles")
           .select("role")
           .eq("user_id", userId)
-          .single();
-        if (!error && data) {
+          .maybeSingle(); // Use maybeSingle to avoid errors if no role is found
+
+        if (error) {
+          console.error("Error fetching user role:", error.message);
+          setRole(null);
+          return;
+        }
+
+        if (data) {
+          console.log("Role found:", data.role);
           setRole((data.role as AppRole) ?? null);
         } else {
+          console.log("No role found for user, treating as passenger");
           setRole(null);
         }
-      } catch {
+      } catch (err) {
+        console.error("Unexpected error fetching user role:", err);
         setRole(null);
       }
     };
@@ -56,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(sessionData?.user ?? null);
 
         if (sessionData?.user) {
+          setLoading(true); // Ensure loading is true while fetching role
           // Use setTimeout to avoid blocking the auth callback
           setTimeout(() => {
             fetchRole(sessionData.user.id).then(() => setLoading(false));

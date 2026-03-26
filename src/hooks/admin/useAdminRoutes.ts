@@ -76,7 +76,7 @@ export function useAdminRouteUpdate() {
       updates,
     }: {
       id: string;
-      updates: Partial<Route>;
+      updates: RouteUpdate;
     }) => {
       const { data, error } = await supabase
         .from("routes")
@@ -103,7 +103,10 @@ export function useAdminRouteDelete() {
 
   return useMutation({
     mutationFn: async (routeId: string) => {
-      const { error } = await supabase.from("routes").delete().eq("id", routeId);
+      const { error } = await supabase
+        .from("routes")
+        .update({ is_deleted: true, status: 'inactive' })
+        .eq("id", routeId);
 
       if (error) throw new Error(error.message);
     },
