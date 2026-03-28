@@ -116,7 +116,7 @@ export default function TicketDetail() {
                 <div className="bg-card/90 backdrop-blur-sm p-3 rounded-xl flex items-center justify-between border border-border">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-lg overflow-hidden bg-muted">
-                      <img src={driver?.avatar_url || "https://api.dicebear.com/7.x/avataaars/svg?seed=Driver"} alt="Driver" className="h-full w-full object-cover" />
+                      <img src={"https://api.dicebear.com/7.x/avataaars/svg?seed=Driver"} alt="Driver" className="h-full w-full object-cover" />
                     </div>
                     <div>
                       <p className="text-[10px] text-secondary font-semibold uppercase">En Route</p>
