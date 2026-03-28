@@ -25,7 +25,7 @@ export default function TicketDetail() {
   const [driverLocation, setDriverLocation] = useState<LocationUpdate | null>(null);
   
   const route = routes.find(r => r.id === ticket?.route_id);
-  const driver = drivers[0]; // For now, first driver
+  const driver = vehicles[0]; // For now, first entry as placeholder
 
   useEffect(() => {
     if (!ticket || ticket.status !== "active" || !driver) return;

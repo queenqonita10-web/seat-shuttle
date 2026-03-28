@@ -10,8 +10,8 @@ export const useBookings = () => {
       if (!user) return [];
       const { data, error } = await supabase
         .from('bookings')
-        .select('*, trips(*, routes(*)) ')
-        .eq('passenger_id', user.id);
+        .select('*')
+        .eq('user_id', user.id);
       if (error) throw new Error(error.message);
       return data;
     },
@@ -23,7 +23,11 @@ export const useCreateBooking = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (bookingData: any) => {
-      const { data, error } = await supabase.rpc('create_booking', { booking_data: bookingData });
+      const { data, error } = await supabase
+        .from('bookings')
+        .insert([bookingData])
+        .select()
+        .single();
       if (error) throw new Error(error.message);
       return data;
     },
