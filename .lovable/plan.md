@@ -1,78 +1,77 @@
 
 
-# Fix: /admin Stuck & Auth Issues
+# Review & Refinement — Build Error Fix
 
-## Root Cause Analysis
+## Masalah yang Ditemukan
 
-Berdasarkan review session replay dan kode, ada **3 masalah** yang menyebabkan /admin stuck:
+### 1. Types File Kosong (ROOT CAUSE — Memblokir Semua Admin Hooks)
+`src/integrations/supabase/types.ts` hanya berisi placeholder kosong — tidak ada `Tables` type yang di-export. Semua admin hooks (`useAdminTrips`, `useAdminRoutes`, `useAdminDrivers`, `useAdminBookings`, `useAdminDashboard`) import `Tables<"...">` dari file ini dan **GAGAL**.
 
-### 1. Demo Login Gagal — Email Confirmation Wajib
-Session replay menunjukkan user klik tombol "Admin" demo → error "Email not confirmed". Ini karena:
-- Demo account belum ada di database
-- Kode mencoba `signUp()` lalu langsung `signInWithPassword()`
-- Tapi email confirmation belum dimatikan, jadi auto-login gagal
-- **Solusi**: Aktifkan auto-confirm email signups agar demo accounts bisa langsung login
+**Perbaikan**: Hapus semua `import type { Tables }` dari admin hooks. Gunakan inline interface definitions yang sudah match dengan DB schema, karena file types.ts di-auto-generate dan saat ini kosong.
 
-### 2. ProtectedRoute Loading Infinite (Stuck Spinner)
-User yang BUKAN admin navigasi ke `/admin`:
-- ProtectedRoute menunjukkan spinner saat `loading=true`
-- Setelah loading selesai, seharusnya redirect ke `/` karena `role !== "admin"`
-- Tapi ada race condition di `useAuth.tsx`: `onAuthStateChange` dan `checkSession` bisa saling override, menyebabkan loading state tidak konsisten
-- **Solusi**: Perbaiki race condition di useAuth — gunakan satu path untuk initial session check
+### 2. Dashboard.tsx — `chartData` Tidak Didefinisikan
+Line 75: `<BarChart data={chartData}>` tapi `chartData` tidak pernah dideklarasikan. Hook `useAdminBookingTrends` memanggil RPC `get_daily_booking_trends` yang **tidak ada** di database.
 
-### 3. Missing Foreign Keys — Admin Queries Error
-Database tidak memiliki foreign keys antar tabel (trips→routes, trips→drivers, trips→vehicles). Query relasional di `useAdminTrips`:
-```
-supabase.from("trips").select("*, routes(id, name), vehicles(...), drivers(...)")
-```
-akan GAGAL karena Supabase membutuhkan FK relationships untuk joins.
-- **Solusi**: Tambah foreign keys via migration
+**Perbaikan**: Generate chart data dari bookings yang sudah di-fetch — group by day dari `bookings` array, bukan dari RPC yang tidak ada.
 
----
+### 3. DriverDashboard.tsx — `useTrips` Signature Mismatch
+Line 14: `useTrips({ driverId })` tapi `useTrips` expects `routeIds: string[]`, bukan object.
+Line 10: `user?.driver_id` — `User` type dari Supabase tidak punya `driver_id`.
 
-## Rencana Perbaikan
+**Perbaikan**: Rewrite DriverDashboard untuk fetch trips via langsung query ke supabase dengan driver filter, bukan lewat `useTrips`.
 
-### Step 1: Enable Auto-Confirm Email
-Aktifkan auto-confirm agar demo accounts dan registrasi bisa langsung login tanpa verifikasi email.
+### 4. useDriverLocation.ts — Column Mismatch
+Line 17: Upsert menggunakan `latitude`, `longitude`, `timestamp` tapi DB schema punya `lat`, `lng`, `updated_at`.
+Line 10: `user.app_metadata.role` — `app_metadata` tidak tersedia langsung.
 
-### Step 2: Migration — Add Foreign Keys
-Tambah FK constraints:
-- `trips.route_id → routes.id`
-- `trips.driver_id → drivers.id`
-- `trips.vehicle_id → vehicles.id`
-- `trips.vehicle_type_id → vehicle_types.id`
-- `bookings.trip_id → trips.id`
-- `tickets.booking_id → bookings.id`
-- `tickets.trip_id → trips.id`
-- `tickets.route_id → routes.id`
-- `seats.trip_id → trips.id`
-- `pickup_points.route_id → routes.id`
-- `driver_locations.driver_id → drivers.id`
-- `drivers.user_id → auth.users.id`
-- `profiles.user_id → auth.users.id`
-- `user_roles.user_id → auth.users.id`
+**Perbaikan**: Fix column names ke `lat`, `lng`. Gunakan `useAuth()` role check, bukan `app_metadata`.
 
-### Step 3: Fix useAuth Race Condition
-Perbaiki `useAuth.tsx`:
-- Jangan fetch role di kedua `checkSession` DAN `onAuthStateChange` — biarkan `onAuthStateChange` yang handle semua
-- `checkSession` hanya set loading=false jika tidak ada session (early exit)
+### 5. Edge Function `send-eticket` — Import Error
+Line 3: `import { Resend } from 'resend'` — not a Deno dependency.
 
-### Step 4: Fix Auth.tsx — Role Insert untuk Passenger
-Line 117: `registerRole` bisa `"passenger"` tapi `app_role` enum hanya punya `admin`/`driver`. Insert akan error.
-- **Solusi**: Jangan insert role untuk passenger (mereka tidak butuh entry di `user_roles`)
+**Perbaikan**: Ganti ke `import { Resend } from 'npm:resend'` (Deno npm specifier).
 
-### Step 5: Fix Dashboard Query — Active Trips Filter
-Dashboard line 36: `trips.filter(t => t.status === "active")` tapi seed data menggunakan status `"pending"` bukan `"active"`.
+### 6. DriverPickupDetail.tsx — Hooks After Return
+Line 48: `useRoutes()` dipanggil setelah conditional return (line 43-46). React hooks harus dipanggil sebelum conditional returns.
+
+**Perbaikan**: Pindahkan `useRoutes()` ke atas, sebelum early return.
 
 ---
 
-## File yang Diubah (6 file)
+## Rencana Perbaikan (7 file)
+
+### Step 1: Fix Admin Hooks — Remove `Tables` Import
+Remove `Tables` type import from 5 admin hooks. Replace with explicit types matching DB columns.
+
+Files: `useAdminTrips.ts`, `useAdminRoutes.ts`, `useAdminDrivers.ts`, `useAdminBookings.ts`, `useAdminDashboard.ts`
+
+### Step 2: Fix Dashboard.tsx — Add chartData
+Remove `useAdminBookingTrends` import. Generate `chartData` from bookings array by grouping last 7 days.
+
+### Step 3: Fix DriverDashboard.tsx
+Replace `useTrips({ driverId })` with direct supabase query. Remove `user?.driver_id` reference.
+
+### Step 4: Fix useDriverLocation.ts
+Fix column names: `latitude` → `lat`, `longitude` → `lng`, `timestamp` → remove (use DB default `updated_at`). Fix role check.
+
+### Step 5: Fix send-eticket Edge Function
+Change `import { Resend } from 'resend'` → `import { Resend } from 'npm:resend'`.
+
+### Step 6: Fix DriverPickupDetail.tsx — Hook Order
+Move `useRoutes()` call before the early return guard.
+
+## File yang Diubah (9 file)
 
 | File | Aksi |
 |------|------|
-| Migration SQL | Add foreign keys |
-| `src/hooks/useAuth.tsx` | Fix race condition |
-| `src/pages/Auth.tsx` | Fix passenger role insert |
-| `src/pages/admin/Dashboard.tsx` | Fix active trips filter |
-| Auto-confirm config | Enable via tool |
+| `src/hooks/admin/useAdminTrips.ts` | Remove Tables import, use explicit types |
+| `src/hooks/admin/useAdminRoutes.ts` | Remove Tables import, use explicit types |
+| `src/hooks/admin/useAdminDrivers.ts` | Remove Tables import, use explicit types |
+| `src/hooks/admin/useAdminBookings.ts` | Remove Tables import, use explicit types |
+| `src/hooks/admin/useAdminDashboard.ts` | Remove Tables import, use explicit types |
+| `src/pages/admin/Dashboard.tsx` | Add chartData generation, remove BookingTrends hook |
+| `src/pages/driver/DriverDashboard.tsx` | Fix useTrips call, remove driver_id |
+| `src/hooks/useDriverLocation.ts` | Fix column names lat/lng |
+| `supabase/functions/send-eticket/index.ts` | Fix npm import |
+| `src/pages/driver/DriverPickupDetail.tsx` | Fix hooks order |
 
