@@ -7,7 +7,7 @@ import {
   Ticket as TicketIcon, Calendar, Clock, Search,
   CheckCircle2, XCircle, Timer, Navigation, QrCode
 } from "lucide-react";
-import { useUserTickets } from "@/hooks/useTickets";
+import { useTickets as useUserTickets } from "@/hooks/useTickets";
 import { useRoutes } from "@/hooks/useRoutes";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";

@@ -47,7 +47,6 @@ const DriverPickupDetail = () => {
   }
 
   const route = routesData.find((r) => r.id === activeTrip.route_id);
-  const route = routesData.find((r) => r.id === activeTrip.route_id);
   const currentStop = route?.pickup_points[currentStopIndex];
   const stopBookings = bookings.filter((b) => b.pickup_point_id === currentStop?.id);
 

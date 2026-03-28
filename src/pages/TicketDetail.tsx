@@ -8,9 +8,9 @@ import {
   ChevronLeft, MapPin, Clock, Navigation, Info, Phone, ShieldCheck,
   Truck, QrCode, Share2, HelpCircle
 } from "lucide-react";
-import { useTicketById } from "@/hooks/useTickets";
+import { useTickets } from "@/hooks/useTickets";
 import { useRoutes } from "@/hooks/useRoutes";
-import { useDrivers } from "@/hooks/useVehicles";
+import { useVehicles } from "@/hooks/useVehicles";
 import { TrackingService, LocationUpdate } from "@/services/trackingService";
 import { cn } from "@/lib/utils";
 import { BottomNav } from "@/components/BottomNav";

@@ -87,7 +87,7 @@ const AdminRoutes = () => {
     setIsDialogOpen(true);
   };
 
-  const handleEdit = (route: RouteWithPickups) => {
+  const handleEdit = (route: any) => {
     setEditingRoute(route);
     reset(route);
     setIsDialogOpen(true);
@@ -108,7 +108,7 @@ const AdminRoutes = () => {
         await createRoute.mutateAsync({
           ...createData,
           id: `RTE-${Date.now()}`,
-        });
+        } as any);
       }
       setIsDialogOpen(false);
     } catch (error) {
