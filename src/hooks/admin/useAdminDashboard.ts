@@ -1,11 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import type { Tables } from "@/integrations/supabase/types";
 
-type Trip = Tables<"trips">;
-type Booking = Tables<"bookings">;
-type Driver = Tables<"drivers">;
+interface Trip { id: string; status: string; }
+interface Booking { id: string; fare: number; payment_status: string; created_at: string; }
+interface Driver { id: string; status: string; }
 
 export interface DashboardStats {
   activeTrips: number;

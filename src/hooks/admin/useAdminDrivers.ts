@@ -1,9 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import type { Tables } from "@/integrations/supabase/types";
 
-type Driver = Tables<"drivers">;
+interface Driver {
+  id: string;
+  name: string;
+  phone: string;
+  status: string;
+  user_id: string | null;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
 
 interface DriverFilters {
   status?: string;

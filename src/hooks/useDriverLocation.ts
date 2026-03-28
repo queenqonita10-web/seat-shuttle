@@ -2,19 +2,19 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-export const useDriverLocation = (driverId: number | null) => {
-  const { user } = useAuth();
+export const useDriverLocation = (driverId: string | null) => {
+  const { isDriver } = useAuth();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!driverId || !user || user.app_metadata.role !== 'driver') return;
+    if (!driverId || !isDriver) return;
 
     const watchId = navigator.geolocation.watchPosition(
       async (position) => {
         const { latitude, longitude } = position.coords;
         const { error: updateError } = await supabase
           .from('driver_locations')
-          .upsert({ driver_id: driverId, latitude, longitude, timestamp: new Date().toISOString() });
+          .upsert({ driver_id: driverId, lat: latitude, lng: longitude });
 
         if (updateError) {
           console.error('Error updating driver location:', updateError);
@@ -31,7 +31,7 @@ export const useDriverLocation = (driverId: number | null) => {
     return () => {
       navigator.geolocation.clearWatch(watchId);
     };
-  }, [driverId, user]);
+  }, [driverId, isDriver]);
 
   return { error };
 };

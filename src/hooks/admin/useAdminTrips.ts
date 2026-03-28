@@ -1,9 +1,19 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import type { Tables } from "@/integrations/supabase/types";
 
-type Trip = Tables<"trips">;
+interface Trip {
+  id: string;
+  route_id: string;
+  vehicle_id: string | null;
+  driver_id: string | null;
+  vehicle_type_id: string;
+  departure_date: string;
+  departure_time: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
 
 interface TripFilters {
   status?: string;

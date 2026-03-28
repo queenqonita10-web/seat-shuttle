@@ -8,9 +8,9 @@ import {
   ChevronLeft, MapPin, Clock, Navigation, Info, Phone, ShieldCheck,
   Truck, QrCode, Share2, HelpCircle
 } from "lucide-react";
-import { useTicketById } from "@/hooks/useTickets";
+import { useTickets } from "@/hooks/useTickets";
 import { useRoutes } from "@/hooks/useRoutes";
-import { useDrivers } from "@/hooks/useVehicles";
+import { useVehicles } from "@/hooks/useVehicles";
 import { TrackingService, LocationUpdate } from "@/services/trackingService";
 import { cn } from "@/lib/utils";
 import { BottomNav } from "@/components/BottomNav";
@@ -18,13 +18,14 @@ import { BottomNav } from "@/components/BottomNav";
 export default function TicketDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: ticket, isLoading } = useTicketById(id);
+  const { data: tickets = [], isLoading } = useTickets();
+  const ticket = tickets.find((t: any) => t.id === id);
   const { data: routes = [] } = useRoutes();
-  const { data: drivers = [] } = useDrivers();
+  const { data: vehicles = [] } = useVehicles();
   const [driverLocation, setDriverLocation] = useState<LocationUpdate | null>(null);
   
   const route = routes.find(r => r.id === ticket?.route_id);
-  const driver = drivers[0]; // For now, first driver
+  const driver = vehicles[0]; // For now, first entry as placeholder
 
   useEffect(() => {
     if (!ticket || ticket.status !== "active" || !driver) return;
@@ -115,7 +116,7 @@ export default function TicketDetail() {
                 <div className="bg-card/90 backdrop-blur-sm p-3 rounded-xl flex items-center justify-between border border-border">
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-lg overflow-hidden bg-muted">
-                      <img src={driver?.avatar_url || "https://api.dicebear.com/7.x/avataaars/svg?seed=Driver"} alt="Driver" className="h-full w-full object-cover" />
+                      <img src={"https://api.dicebear.com/7.x/avataaars/svg?seed=Driver"} alt="Driver" className="h-full w-full object-cover" />
                     </div>
                     <div>
                       <p className="text-[10px] text-secondary font-semibold uppercase">En Route</p>

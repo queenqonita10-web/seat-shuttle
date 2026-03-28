@@ -32,6 +32,7 @@ const DriverPickupDetail = () => {
     nextStop, isDrivingMode, playFeedback, stressLevel, updatePerformance,
     waitLimit, setWaitLimit, addIncidentReport, locationVerified, setLocationVerified
   } = useDriver();
+  const { data: routesData = [] } = useRoutes();
   const [timers, setTimers] = useState<Record<string, number>>({});
   const [passengerRequests, setPassengerRequests] = useState<Record<string, string[]>>({});
   const [showVerification, setShowVerification] = useState<string | null>(null);
@@ -45,7 +46,6 @@ const DriverPickupDetail = () => {
     return null;
   }
 
-  const { data: routesData = [] } = useRoutes();
   const route = routesData.find((r) => r.id === activeTrip.route_id);
   const currentStop = route?.pickup_points[currentStopIndex];
   const stopBookings = bookings.filter((b) => b.pickup_point_id === currentStop?.id);
