@@ -11,8 +11,8 @@ import { useAdminDashboard } from "@/hooks/admin/useAdminDashboard";
 import { useAdminBookings } from "@/hooks/admin/useAdminBookings";
 import { useAdminTrips } from "@/hooks/admin/useAdminTrips";
 import { useAdminDrivers } from "@/hooks/admin/useAdminDrivers";
-import { useAdminBookingTrends } from "@/hooks/admin/useAdminBookingTrends";
 import { formatPrice } from "@/lib/formatters";
+import { useMemo } from "react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -27,6 +27,22 @@ export default function Dashboard() {
 
   const activeTrips = trips.filter(t => ["active", "ONGOING", "pending"].includes(t.status));
   const recentBookings = [...bookings].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
+
+  const chartData = useMemo(() => {
+    const days: Record<string, number> = {};
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toLocaleDateString("en-US", { weekday: "short" });
+      days[key] = 0;
+    }
+    bookings.forEach(b => {
+      const d = new Date(b.created_at);
+      const key = d.toLocaleDateString("en-US", { weekday: "short" });
+      if (key in days) days[key]++;
+    });
+    return Object.entries(days).map(([day, bookings]) => ({ day, bookings }));
+  }, [bookings]);
 
   const stats = [
     { label: "Total Bookings", value: statsLoading ? "..." : dashStats?.totalBookings ?? 0, icon: BookOpen, color: "text-blue-600", bg: "bg-blue-50" },

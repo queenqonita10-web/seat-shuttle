@@ -1,12 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import type { Tables } from "@/integrations/supabase/types";
 
-type Route = Tables<"routes">;
-type RouteInsert = Tables<"routes", "Insert">;
-type RouteUpdate = Tables<"routes", "Update">;
-type PickupPoint = Tables<"pickup_points">;
+interface Route {
+  id: string;
+  name: string;
+  origin: string;
+  destination: string;
+  route_code: string;
+  distance: number;
+  estimated_time: string;
+  status: string;
+  is_deleted: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+type RouteInsert = Partial<Route> & { id: string; name: string; origin: string; destination: string; route_code: string };
+type RouteUpdate = Partial<Route>;
+
+interface PickupPoint {
+  id: string;
+  route_id: string;
+  label: string;
+  fare: number;
+  sort_order: number;
+  time_offset: number;
+}
 
 export interface RouteWithPickups extends Route {
   pickup_points?: PickupPoint[];
