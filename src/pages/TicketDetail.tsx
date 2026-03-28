@@ -18,9 +18,10 @@ import { BottomNav } from "@/components/BottomNav";
 export default function TicketDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { data: ticket, isLoading } = useTicketById(id);
+  const { data: tickets = [], isLoading } = useTickets();
+  const ticket = tickets.find((t: any) => t.id === id);
   const { data: routes = [] } = useRoutes();
-  const { data: drivers = [] } = useDrivers();
+  const { data: vehicles = [] } = useVehicles();
   const [driverLocation, setDriverLocation] = useState<LocationUpdate | null>(null);
   
   const route = routes.find(r => r.id === ticket?.route_id);
