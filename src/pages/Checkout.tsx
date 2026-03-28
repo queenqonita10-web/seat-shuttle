@@ -54,7 +54,7 @@ export default function Checkout() {
         });
 
         setBooking({
-          id: result.bookingId,
+          id: result.id,
           tripId: selectedTrip!.id,
           seatNumber: selectedSeat!,
           pickupPointId: pickupPoint!.id,
