@@ -8,10 +8,17 @@ export const useTickets = () => {
     queryKey: ['tickets', user?.id],
     queryFn: async () => {
       if (!user) return [];
+      // First get booking IDs for this user
+      const { data: userBookings } = await supabase
+        .from('bookings')
+        .select('id')
+        .eq('user_id', user.id);
+      const bookingIds = userBookings?.map(b => b.id) || [];
+      if (bookingIds.length === 0) return [];
       const { data, error } = await supabase
         .from('tickets')
-        .select('*, bookings(*, trips(*, routes(*)))')
-        .in('booking_id', (await supabase.from('bookings').select('id').eq('passenger_id', user.id)).data?.map(b => b.id) || []);
+        .select('*, bookings(*)')
+        .in('booking_id', bookingIds);
       if (error) throw new Error(error.message);
       return data;
     },
